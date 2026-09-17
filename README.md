@@ -20,16 +20,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Demo accounts
-
-| Role | Email | Password | Scope |
-| --- | --- | --- | --- |
-| Employee | ahmed@sanbala.sa | Sanbala.Employee1 | Eastern Region Nursery · Zone A |
-| Supervisor | khalid@sanbala.sa | Sanbala.Supervisor1 | Eastern Region Nursery |
-| Supervisor | sara@sanbala.sa | Sanbala.Supervisor1 | Riyadh Nursery |
-| HQ | hq@sanbala.sa | Sanbala.HQ1 | All nurseries |
-
-Role selection on the welcome screen is UX only. The database role is the source of truth.
 
 ## First vertical slice
 
