@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+:root {
+  --forest: #163d2a;
+  --deep: #0e2d1e;
+  --leaf: #4f7d57;
+  --sage: #a8bfa3;
+  --light-sage: #dde8da;
+  --cream: #f7f5ed;
+  --sand: #e8dfc8;
+  --white: #ffffff;
+  --ink: #20342a;
+  --muted: #66756d;
+  --healthy: #4f8a5b;
+  --attention: #d5a43b;
+  --critical: #c65b4b;
+  --water: #5a9fa6;
+}
+
+@theme inline {
+  --color-forest: var(--forest);
+  --color-deep: var(--deep);
+  --color-leaf: var(--leaf);
+  --color-sage: var(--sage);
+  --color-light-sage: var(--light-sage);
+  --color-cream: var(--cream);
+  --color-sand: var(--sand);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-healthy: var(--healthy);
+  --color-attention: var(--attention);
+  --color-critical: var(--critical);
+  --color-water: var(--water);
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: var(--font-ibm-arabic), "Noto Sans Arabic", sans-serif;
+  --shadow-card: 0 10px 30px -18px rgba(14, 45, 30, 0.28);
+  --shadow-lift: 0 18px 40px -20px rgba(14, 45, 30, 0.35);
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 0% -10%, rgba(221, 232, 218, 0.7), transparent 55%),
+    radial-gradient(900px 420px at 100% 0%, rgba(232, 223, 200, 0.45), transparent 46%),
+    var(--cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--light-sage);
+  color: var(--forest);
+}
+
+.font-arabic {
+  font-family: var(--font-arabic);
+}
+
+.welcome-canvas {
+  background:
+    radial-gradient(900px 480px at 12% 8%, rgba(168, 191, 163, 0.35), transparent 55%),
+    radial-gradient(720px 380px at 92% 4%, rgba(90, 159, 166, 0.14), transparent 50%),
+    radial-gradient(640px 420px at 80% 88%, rgba(79, 125, 87, 0.12), transparent 48%),
+    var(--cream);
+}
+
+.sidebar-texture {
+  background:
+    radial-gradient(420px 240px at 20% 0%, rgba(168, 191, 163, 0.18), transparent 62%),
+    linear-gradient(180deg, #163d2a 0%, #10291d 100%);
+}
+
+.surface-card {
+  background: var(--white);
+  border: 1px solid rgba(232, 223, 200, 0.9);
+  box-shadow: var(--shadow-card);
+}
+
+.card-lift {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--leaf);
+  outline-offset: 2px;
+}

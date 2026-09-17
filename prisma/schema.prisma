@@ -1,0 +1,661 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  SUPERVISOR
+  HQ
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum HealthStatus {
+  HEALTHY
+  ATTENTION
+  CRITICAL
+  NO_RECENT_DATA
+}
+
+enum GrowthStage {
+  SEEDLING
+  GROWING
+  READY
+  DISTRIBUTED
+}
+
+enum MetricType {
+  SOIL_MOISTURE
+  TEMPERATURE
+  HUMIDITY
+  PH
+  WATER_LEVEL
+}
+
+enum ReadingSource {
+  SENSOR
+  MANUAL
+  EXTERNAL
+}
+
+enum QualityStatus {
+  VALID
+  WARNING
+  INVALID
+  STALE
+}
+
+enum SensorStatus {
+  ONLINE
+  OFFLINE
+  MAINTENANCE
+}
+
+enum CalibrationStatus {
+  CURRENT
+  DUE
+  OVERDUE
+}
+
+enum OperationType {
+  IRRIGATION
+  FERTILIZATION
+  REPLANTING
+  INSPECTION
+  OTHER
+}
+
+enum AlertType {
+  LOW_MOISTURE
+  HIGH_MOISTURE
+  PH_OUT_OF_RANGE
+  TEMPERATURE_STRESS
+  STALE_DATA
+  HEALTH_RISK
+  OVERDUE_TASK
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum TaskType {
+  WATERING
+  FERTILIZING
+  INSPECTION
+  REPLANTING
+  GENERAL
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InventoryState {
+  IN_PRODUCTION
+  READY
+  ALLOCATED
+  DISTRIBUTED
+}
+
+enum RequestStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum RequestPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum EventType {
+  PLANT_ADDED
+  READING_RECORDED
+  SENSOR_READING_RECEIVED
+  ALERT_CREATED
+  RECOMMENDATION_GENERATED
+  TASK_ASSIGNED
+  TASK_STARTED
+  IRRIGATION_PERFORMED
+  OPERATION_RECORDED
+  TASK_COMPLETED
+  ALERT_RESOLVED
+  INVENTORY_UPDATED
+  REQUEST_SUBMITTED
+  REQUEST_APPROVED
+  REQUEST_REJECTED
+  REQUEST_UNDER_REVIEW
+  IMAGE_UPLOADED
+}
+
+model Nursery {
+  id        String   @id
+  name      String
+  region    String
+  code      String   @unique
+  capacity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users              User[]
+  zones              Zone[]
+  batches            SeedlingBatch[]
+  cells              PlantCell[]
+  sensors            Sensor[]
+  measurements       PlantMeasurement[]
+  operations         DailyOperation[]
+  images             PlantImage[]
+  alerts             Alert[]
+  recommendations    Recommendation[]
+  tasks              Task[]
+  inventory          InventoryItem[]
+  requests           SeedlingRequest[]
+  productionTargets  ProductionTarget[]
+  events             EventHistory[]
+}
+
+model User {
+  id            String        @id
+  fullName      String
+  email         String        @unique
+  username      String        @unique
+  passwordHash  String
+  role          Role
+  nurseryId     String?
+  accountStatus AccountStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  nursery             Nursery?                   @relation(fields: [nurseryId], references: [id])
+  zoneAssignments     EmployeeZoneAssignment[]
+  operations          DailyOperation[]
+  measurements        PlantMeasurement[]
+  images              PlantImage[]
+  assessments         HealthAssessment[]         @relation("AssessedBy")
+  assignedTasks       Task[]
+  inventoryUpdates    InventoryTransaction[]
+  requestsSubmitted   SeedlingRequest[]          @relation("RequestSubmitter")
+  requestsReviewed    SeedlingRequest[]          @relation("RequestReviewer")
+  productionTargets   ProductionTarget[]
+  events              EventHistory[]
+
+  @@index([role])
+  @@index([nurseryId])
+}
+
+model EmployeeZoneAssignment {
+  id         String   @id @default(cuid())
+  userId     String
+  zoneId     String
+  assignedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zone Zone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, zoneId])
+}
+
+model Zone {
+  id        String   @id
+  nurseryId String
+  name      String
+  code      String
+  capacity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nursery         Nursery                    @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  assignments     EmployeeZoneAssignment[]
+  cells           PlantCell[]
+  batches         SeedlingBatch[]
+  sensors         Sensor[]
+  measurements    PlantMeasurement[]
+  operations      DailyOperation[]
+  images          PlantImage[]
+  alerts          Alert[]
+  recommendations Recommendation[]
+  tasks           Task[]
+  productionTargets ProductionTarget[]
+  events          EventHistory[]
+
+  @@unique([nurseryId, code])
+  @@index([nurseryId])
+}
+
+model PlantCell {
+  id        String   @id
+  zoneId    String
+  nurseryId String
+  code      String
+  rowIndex  Int
+  colIndex  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  zone            Zone              @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  nursery         Nursery           @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  batches         SeedlingBatch[]
+  measurements    PlantMeasurement[]
+  operations      DailyOperation[]
+  images          PlantImage[]
+  assessments     HealthAssessment[]
+  alerts          Alert[]
+  recommendations Recommendation[]
+  tasks           Task[]
+  events          EventHistory[]
+
+  @@unique([zoneId, code])
+  @@index([zoneId])
+  @@index([nurseryId])
+}
+
+model Species {
+  id             String   @id
+  commonName     String
+  scientificName String
+  category       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  batches            SeedlingBatch[]
+  images             PlantImage[]
+  knowledge          PlantKnowledgeBase[]
+  inventory          InventoryItem[]
+  requests           SeedlingRequest[]
+  productionTargets  ProductionTarget[]
+}
+
+model SeedlingBatch {
+  id           String       @id
+  code         String       @unique
+  speciesId    String
+  nurseryId    String
+  zoneId       String
+  plantCellId  String?
+  quantity     Int
+  source       String
+  plantingDate DateTime
+  growthStage  GrowthStage
+  healthStatus HealthStatus @default(HEALTHY)
+  notes        String?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  species         Species            @relation(fields: [speciesId], references: [id])
+  nursery         Nursery            @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone            Zone               @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  plantCell       PlantCell?         @relation(fields: [plantCellId], references: [id])
+  measurements    PlantMeasurement[]
+  operations      DailyOperation[]
+  images          PlantImage[]
+  assessments     HealthAssessment[]
+  alerts          Alert[]
+  recommendations Recommendation[]
+  tasks           Task[]
+  events          EventHistory[]
+
+  @@index([nurseryId])
+  @@index([zoneId])
+  @@index([speciesId])
+  @@index([plantCellId])
+}
+
+model Sensor {
+  id                 String            @id
+  nurseryId          String
+  zoneId             String
+  name               String
+  type               MetricType
+  status             SensorStatus      @default(ONLINE)
+  calibrationStatus  CalibrationStatus @default(CURRENT)
+  lastReadingAt      DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  nursery    Nursery          @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone       Zone             @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  readings   SensorReading[]
+  measurements PlantMeasurement[]
+
+  @@index([zoneId])
+  @@index([nurseryId])
+}
+
+model SensorReading {
+  id            String        @id @default(cuid())
+  sensorId      String
+  value         Float
+  unit          String
+  qualityStatus QualityStatus
+  timestamp     DateTime
+  createdAt     DateTime      @default(now())
+
+  sensor Sensor @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+
+  @@index([sensorId, timestamp])
+}
+
+model PlantMeasurement {
+  id             String        @id @default(cuid())
+  nurseryId      String
+  zoneId         String
+  plantCellId    String?
+  batchId        String?
+  sensorId       String?
+  metric         MetricType
+  value          Float
+  unit           String
+  source         ReadingSource
+  qualityStatus  QualityStatus
+  recordedById   String?
+  timestamp      DateTime
+  notes          String?
+  createdAt      DateTime      @default(now())
+
+  nursery   Nursery      @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone      Zone         @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  plantCell PlantCell?   @relation(fields: [plantCellId], references: [id])
+  batch     SeedlingBatch? @relation(fields: [batchId], references: [id])
+  sensor    Sensor?      @relation(fields: [sensorId], references: [id])
+  recordedBy User?       @relation(fields: [recordedById], references: [id])
+
+  @@index([plantCellId, timestamp])
+  @@index([zoneId, timestamp])
+  @@index([nurseryId, timestamp])
+}
+
+model DailyOperation {
+  id          String        @id @default(cuid())
+  type        OperationType
+  nurseryId   String
+  zoneId      String
+  plantCellId String?
+  batchId     String?
+  userId      String
+  taskId      String?
+  occurredAt  DateTime
+  amount      Float?
+  unit        String?
+  notes       String?
+  createdAt   DateTime      @default(now())
+
+  nursery   Nursery        @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone      Zone           @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  plantCell PlantCell?     @relation(fields: [plantCellId], references: [id])
+  batch     SeedlingBatch? @relation(fields: [batchId], references: [id])
+  user      User           @relation(fields: [userId], references: [id])
+  task      Task?          @relation(fields: [taskId], references: [id])
+
+  @@index([nurseryId, occurredAt])
+  @@index([zoneId, occurredAt])
+  @@index([userId])
+}
+
+model PlantImage {
+  id                    String   @id @default(cuid())
+  nurseryId             String
+  zoneId                String
+  plantCellId           String?
+  batchId               String?
+  speciesId             String?
+  userId                String
+  filePath              String
+  notes                 String?
+  classificationLabel   String?
+  classificationIsDemo  Boolean  @default(true)
+  createdAt             DateTime @default(now())
+
+  nursery   Nursery        @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone      Zone           @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  plantCell PlantCell?     @relation(fields: [plantCellId], references: [id])
+  batch     SeedlingBatch? @relation(fields: [batchId], references: [id])
+  species   Species?       @relation(fields: [speciesId], references: [id])
+  user      User           @relation(fields: [userId], references: [id])
+}
+
+model HealthAssessment {
+  id           String       @id @default(cuid())
+  plantCellId  String?
+  batchId      String?
+  status       HealthStatus
+  notes        String?
+  assessedById String
+  assessedAt   DateTime     @default(now())
+
+  plantCell  PlantCell?     @relation(fields: [plantCellId], references: [id])
+  batch      SeedlingBatch? @relation(fields: [batchId], references: [id])
+  assessedBy User           @relation("AssessedBy", fields: [assessedById], references: [id])
+}
+
+model Alert {
+  id          String        @id @default(cuid())
+  type        AlertType
+  severity    AlertSeverity
+  status      AlertStatus   @default(OPEN)
+  title       String
+  message     String
+  nurseryId   String
+  zoneId      String?
+  plantCellId String?
+  batchId     String?
+  triggerMetric MetricType?
+  triggerValue  Float?
+  createdAt   DateTime      @default(now())
+  resolvedAt  DateTime?
+
+  nursery         Nursery          @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone            Zone?            @relation(fields: [zoneId], references: [id])
+  plantCell       PlantCell?       @relation(fields: [plantCellId], references: [id])
+  batch           SeedlingBatch?   @relation(fields: [batchId], references: [id])
+  recommendations Recommendation[]
+  tasks           Task[]
+
+  @@index([nurseryId, status])
+  @@index([status])
+}
+
+model Recommendation {
+  id          String   @id @default(cuid())
+  alertId     String?
+  title       String
+  message     String
+  nurseryId   String
+  zoneId      String?
+  plantCellId String?
+  batchId     String?
+  createdAt   DateTime @default(now())
+
+  alert     Alert?         @relation(fields: [alertId], references: [id])
+  nursery   Nursery        @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone      Zone?          @relation(fields: [zoneId], references: [id])
+  plantCell PlantCell?     @relation(fields: [plantCellId], references: [id])
+  batch     SeedlingBatch? @relation(fields: [batchId], references: [id])
+  tasks     Task[]
+}
+
+model Task {
+  id               String       @id @default(cuid())
+  type             TaskType
+  title            String
+  description      String
+  status           TaskStatus   @default(PENDING)
+  priority         TaskPriority
+  dueAt            DateTime?
+  nurseryId        String
+  zoneId           String?
+  plantCellId      String?
+  batchId          String?
+  assigneeId       String?
+  recommendationId String?
+  alertId          String?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  nursery        Nursery         @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone           Zone?           @relation(fields: [zoneId], references: [id])
+  plantCell      PlantCell?      @relation(fields: [plantCellId], references: [id])
+  batch          SeedlingBatch?  @relation(fields: [batchId], references: [id])
+  assignee       User?           @relation(fields: [assigneeId], references: [id])
+  recommendation Recommendation? @relation(fields: [recommendationId], references: [id])
+  alert          Alert?          @relation(fields: [alertId], references: [id])
+  operations     DailyOperation[]
+
+  @@index([assigneeId, status])
+  @@index([nurseryId, status])
+  @@index([dueAt])
+}
+
+model InventoryItem {
+  id        String         @id @default(cuid())
+  nurseryId String
+  speciesId String
+  state     InventoryState
+  quantity  Int
+  updatedAt DateTime       @updatedAt
+
+  nursery      Nursery                @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  species      Species                @relation(fields: [speciesId], references: [id])
+  transactions InventoryTransaction[]
+
+  @@unique([nurseryId, speciesId, state])
+}
+
+model InventoryTransaction {
+  id               String   @id @default(cuid())
+  inventoryId      String
+  quantityChange   Int
+  previousQuantity Int
+  newQuantity      Int
+  reason           String
+  userId           String
+  createdAt        DateTime @default(now())
+
+  inventory InventoryItem @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id])
+}
+
+model SeedlingRequest {
+  id             String          @id @default(cuid())
+  nurseryId      String
+  speciesId      String
+  quantity       Int
+  requiredDate   DateTime
+  currentStock   Int
+  reason         String
+  purpose        String?
+  priority       RequestPriority
+  notes          String?
+  status         RequestStatus   @default(PENDING)
+  submittedById  String
+  reviewedById   String?
+  reviewNotes    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  nursery     Nursery @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  species     Species @relation(fields: [speciesId], references: [id])
+  submittedBy User    @relation("RequestSubmitter", fields: [submittedById], references: [id])
+  reviewedBy  User?   @relation("RequestReviewer", fields: [reviewedById], references: [id])
+
+  @@index([nurseryId, status])
+  @@index([status])
+}
+
+model ProductionTarget {
+  id             String   @id @default(cuid())
+  nurseryId      String
+  zoneId         String?
+  speciesId      String
+  targetQuantity Int
+  targetDate     DateTime
+  createdById    String
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  nursery   Nursery @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone      Zone?   @relation(fields: [zoneId], references: [id])
+  species   Species @relation(fields: [speciesId], references: [id])
+  createdBy User    @relation(fields: [createdById], references: [id])
+}
+
+model PlantKnowledgeBase {
+  id                     String      @id @default(cuid())
+  speciesId              String
+  growthStage            GrowthStage
+  expectedMoistureMin    Float
+  expectedMoistureMax    Float
+  expectedPhMin          Float
+  expectedPhMax          Float
+  expectedTempMin        Float
+  expectedTempMax        Float
+  irrigationGuidance     String
+  fertilizationGuidance  String
+  expectedGrowth         String
+  careGuidelines         String
+  source                 String
+  lastReviewedAt         DateTime
+
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+
+  @@unique([speciesId, growthStage])
+}
+
+model EventHistory {
+  id                String    @id @default(cuid())
+  eventType         EventType
+  timestamp         DateTime  @default(now())
+  userId            String?
+  nurseryId         String?
+  zoneId            String?
+  plantCellId       String?
+  batchId           String?
+  relatedEntityType String?
+  relatedEntityId   String?
+  details           String
+
+  user      User?          @relation(fields: [userId], references: [id])
+  nursery   Nursery?       @relation(fields: [nurseryId], references: [id])
+  zone      Zone?          @relation(fields: [zoneId], references: [id])
+  plantCell PlantCell?     @relation(fields: [plantCellId], references: [id])
+  batch     SeedlingBatch? @relation(fields: [batchId], references: [id])
+
+  @@index([timestamp])
+  @@index([nurseryId, timestamp])
+  @@index([plantCellId, timestamp])
+}
