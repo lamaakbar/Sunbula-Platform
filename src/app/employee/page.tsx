@@ -37,12 +37,14 @@ export default async function EmployeeHomePage() {
 
       <section className="grid gap-3 sm:grid-cols-3">
         <StatCard label="Today's tasks" value={data.tasks.length} hint="Assigned to you" icon={<ListChecks className="h-5 w-5" />} />
-        <StatCard
-          label="Open alerts"
-          value={data.alerts}
-          tone={data.alerts > 0 ? "attention" : "healthy"}
-          icon={<Bell className="h-5 w-5" />}
-        />
+        <Link href="/employee/alerts" className="block">
+          <StatCard
+            label="Open alerts"
+            value={data.alerts}
+            tone={data.alerts > 0 ? "attention" : "healthy"}
+            icon={<Bell className="h-5 w-5" />}
+          />
+        </Link>
         <StatCard
           label="Zone health"
           value={`${data.summary.score}%`}

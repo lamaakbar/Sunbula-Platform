@@ -9,11 +9,14 @@ import type {
   TaskStatus,
 } from "@prisma/client";
 
+const APP_TZ = "Asia/Riyadh";
+
 export function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: APP_TZ,
   }).format(new Date(value));
 }
 
@@ -21,6 +24,7 @@ export function formatTime(value: Date | string) {
   return new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: APP_TZ,
   }).format(new Date(value));
 }
 
@@ -125,7 +129,13 @@ export const requestStatusLabel: Record<RequestStatus, string> = {
 };
 
 export function greetingFor(date = new Date()) {
-  const hour = date.getHours();
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      hour: "numeric",
+      hourCycle: "h23",
+      timeZone: APP_TZ,
+    }).format(date),
+  );
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";

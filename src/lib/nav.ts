@@ -35,6 +35,7 @@ export function navigationFor(role: Role): { primary: NavItem[]; more: NavItem[]
       ],
       more: [
         { href: "/employee/monitoring", label: "Readings", icon: BarChart3 },
+        { href: "/employee/alerts", label: "Alerts", icon: Bell },
         { href: "/employee/inventory", label: "Inventory", icon: Package },
         { href: "/employee/history", label: "History", icon: History },
         { href: "/employee/profile", label: "Profile", icon: UserRound },

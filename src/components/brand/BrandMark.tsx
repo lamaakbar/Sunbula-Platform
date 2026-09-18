@@ -3,8 +3,8 @@ import { cn } from "@/lib/cn";
 
 const LOGO = {
   src: "/brand/sunbula-logo.png",
-  width: 781,
-  height: 338,
+  width: 1562,
+  height: 451,
   alt: "سنبلة SUNBULA",
 } as const;
 
@@ -17,14 +17,14 @@ export function BrandMark({
   size?: "sm" | "md" | "lg" | "hero";
 }) {
   const widthClass = compact
-    ? "w-[9rem]"
+    ? "w-[10rem]"
     : size === "hero"
-      ? "w-full max-w-[24rem]"
+      ? "w-full max-w-[28rem]"
       : size === "sm"
-        ? "w-[10rem]"
+        ? "w-[11rem]"
         : size === "lg"
-          ? "w-[13rem]"
-          : "w-[11.5rem]";
+          ? "w-[14.5rem]"
+          : "w-[13rem]";
 
   return (
     <Image
@@ -35,7 +35,7 @@ export function BrandMark({
       quality={100}
       unoptimized
       priority
-      className={cn("h-auto rounded-xl object-contain object-left", widthClass)}
+      className={cn("h-auto object-contain object-left", widthClass)}
     />
   );
 }
