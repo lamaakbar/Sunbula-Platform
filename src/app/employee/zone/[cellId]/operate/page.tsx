@@ -26,7 +26,7 @@ export default async function OperatePage({
           { label: "Log operation" },
         ]}
       />
-      <PageHeader title="Log operation" description="Choose what you did, then save. SANBALA will update history and any related task." />
+      <PageHeader title="Log operation" description="Choose what you did, then save. SUNBULA will update history and any related task." />
       <OperationForm
         cellId={cell.id}
         cellCode={cell.code}

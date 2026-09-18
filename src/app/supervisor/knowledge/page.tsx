@@ -25,7 +25,7 @@ export default async function KnowledgePage({
 
   return (
     <div>
-      <PageHeader title="Plant knowledge base" description="Expected ranges that give readings their meaning. Source: SANBALA demo knowledge, not official ministry data." />
+      <PageHeader title="Plant knowledge base" description="Expected ranges that give readings their meaning. Source: SUNBULA demo knowledge, not official ministry data." />
       <form className="mb-6">
         <label className="sr-only" htmlFor="q">
           Search species

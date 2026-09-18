@@ -16,7 +16,7 @@ const ibmArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "SANBALA | سنبلة",
+  title: "SUNBULA | سنبلة",
   description: "From every seedling to every nursery — one connected view.",
 };
 

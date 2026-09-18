@@ -72,17 +72,13 @@ export default function WelcomeExperience() {
     <Shell>
       {!selected ? (
         <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl">
-            <BrandMark />
-            <h1 className="mt-10 text-[clamp(2.4rem,5.4vw,4rem)] font-semibold leading-[0.95] text-forest">
-              SANBALA
-              <span className="mt-2 block font-arabic text-[clamp(1.9rem,4vw,3rem)] text-leaf">سنبلة</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-muted">
+          <div className="max-w-xl">
+            <BrandMark size="hero" />
+            <p className="mt-8 max-w-xl text-lg leading-8 text-muted">
               From every seedling to every nursery — one connected view.
             </p>
             <p className="mt-10 text-sm font-semibold uppercase tracking-[0.18em] text-leaf">
-              How are you accessing SANBALA?
+              How are you accessing SUNBULA?
             </p>
           </div>
           <div className="mt-8 grid gap-5 md:grid-cols-3">
@@ -117,6 +113,9 @@ export default function WelcomeExperience() {
               <ArrowLeft className="h-4 w-4" />
               Choose a different access
             </button>
+            <div className="mt-6">
+              <BrandMark size="sm" />
+            </div>
             <h2 className="mt-6 text-4xl font-semibold tracking-tight text-forest">Welcome back.</h2>
             <p className="mt-3 max-w-md text-base leading-7 text-muted">
               Sign in to access your assigned {selected === "HQ" ? "network" : "nursery"} workspace.
@@ -136,8 +135,8 @@ export default function WelcomeExperience() {
           <form action={action} className="relative overflow-hidden rounded-[2rem] bg-white p-7 shadow-[0_24px_60px_-32px_rgba(14,45,30,0.4)] ring-1 ring-sand">
             <BotanicalMark className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 text-sage/20" />
             <input type="hidden" name="intendedRole" value={selected} />
-            <p className={cn("mb-6 text-sm font-semibold text-leaf")}>{ROLE_LABEL[selected]} access</p>
-            <div className="space-y-4">
+            <p className={cn("relative z-10 mb-6 text-sm font-semibold text-leaf")}>{ROLE_LABEL[selected]} access</p>
+            <div className="relative z-10 space-y-4">
               <FormField label="User ID / Email" htmlFor="identifier">
                 <TextInput
                   id="identifier"

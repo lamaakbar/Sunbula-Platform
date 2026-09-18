@@ -11,7 +11,7 @@ export default async function HqHomePage() {
     <div>
       <section className="relative mb-7 overflow-hidden rounded-[2rem] bg-white p-6 ring-1 ring-sand sm:p-8">
         <BotanicalMark className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 text-sage/25" variant="canopy" />
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-leaf">SANBALA Network</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-leaf">SUNBULA Network</p>
         <h1 className="mt-2 text-[clamp(1.9rem,3.4vw,2.6rem)] font-semibold tracking-tight text-forest">
           {totals.nurseries} nurseries
         </h1>

@@ -6,7 +6,7 @@ export default async function HqLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const user = await requireRole("HQ");
   return (
-    <AppShell user={{ fullName: user.fullName, role: user.role, nurseryName: "SANBALA Network" }}>
+    <AppShell user={{ fullName: user.fullName, role: user.role, nurseryName: "SUNBULA Network" }}>
       {children}
     </AppShell>
   );

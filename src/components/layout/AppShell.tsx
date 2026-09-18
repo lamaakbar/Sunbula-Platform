@@ -42,7 +42,7 @@ export function AppShell({
       <aside className="sidebar-texture fixed inset-y-0 left-0 z-30 hidden w-72 flex-col overflow-hidden text-cream lg:flex">
         <BotanicalMark className="pointer-events-none absolute -bottom-8 -right-6 h-44 w-44 text-sage/20" variant="canopy" />
         <div className="relative px-5 py-6">
-          <BrandMark light />
+          <BrandMark light size="lg" />
         </div>
         <nav className="relative flex-1 space-y-1 px-3">
           {all.map((item) => {
@@ -99,7 +99,7 @@ export function AppShell({
         )}
       >
         <div className="flex items-center justify-between px-5 py-6">
-          <BrandMark light />
+          <BrandMark light size="lg" />
           <button type="button" onClick={() => setOpen(false)} className="rounded-xl p-2 text-white" aria-label="Close menu">
             <X className="h-5 w-5" />
           </button>
