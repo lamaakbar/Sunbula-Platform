@@ -1,4 +1,4 @@
-import type { Prisma, AlertType, HealthStatus, MetricType, TaskType } from "@prisma/client";
+import type { Prisma, AlertType, MetricType, TaskType } from "@prisma/client";
 import { readingMeaning } from "@/services/data-quality";
 import { rangeForMetric, recommendationFor, type KnowledgeContext } from "@/services/recommendations";
 import { recordEvent } from "@/services/events";
@@ -30,22 +30,9 @@ function alertTypeFor(metric: MetricType, meaning: "LOW" | "HIGH"): AlertType {
   return "HEALTH_RISK";
 }
 
-function healthFromMeaning(meaning: "LOW" | "HIGH" | "NORMAL" | "UNKNOWN"): HealthStatus {
-  if (meaning === "NORMAL") return "HEALTHY";
-  if (meaning === "UNKNOWN") return "NO_RECENT_DATA";
-  return meaning === "LOW" || meaning === "HIGH" ? "ATTENTION" : "HEALTHY";
-}
-
 export async function evaluateReading(db: Db, input: EvaluateInput) {
   const range = rangeForMetric(input.knowledge, input.metric);
   const meaning = readingMeaning(input.value, range);
-
-  if (input.batchId) {
-    await db.seedlingBatch.update({
-      where: { id: input.batchId },
-      data: { healthStatus: healthFromMeaning(meaning) },
-    });
-  }
 
   if (!input.plantCellId || meaning === "UNKNOWN") {
     return { meaning, alertId: null as string | null };
@@ -82,6 +69,15 @@ export async function evaluateReading(db: Db, input: EvaluateInput) {
       });
     }
 
+    if (input.batchId) {
+      const unresolved = await db.alert.count({
+        where: { batchId: input.batchId, status: { in: ["OPEN", "ACKNOWLEDGED"] } },
+      });
+      await db.seedlingBatch.update({
+        where: { id: input.batchId },
+        data: { healthStatus: unresolved > 0 ? "ATTENTION" : "HEALTHY" },
+      });
+    }
     return { meaning, alertId: null as string | null };
   }
 
@@ -203,5 +199,11 @@ export async function evaluateReading(db: Db, input: EvaluateInput) {
     });
   }
 
+  if (input.batchId) {
+    await db.seedlingBatch.update({
+      where: { id: input.batchId },
+      data: { healthStatus: "ATTENTION" },
+    });
+  }
   return { meaning, alertId };
 }
