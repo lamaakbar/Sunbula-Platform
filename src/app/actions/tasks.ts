@@ -70,6 +70,25 @@ export async function assignTaskAction(
   });
   if (!assignee) return { error: "That employee is not in your nursery." };
 
+  if (parsed.data.zoneId) {
+    const zone = await prisma.zone.findFirst({
+      where: { id: parsed.data.zoneId, nurseryId: user.nurseryId },
+    });
+    if (!zone) return { error: "The selected zone is not in your nursery." };
+    const assignment = await prisma.employeeZoneAssignment.findUnique({
+      where: { userId_zoneId: { userId: assignee.id, zoneId: zone.id } },
+    });
+    if (!assignment) return { error: "This employee is not assigned to the selected zone." };
+  }
+  if (parsed.data.cellId) {
+    const cell = await prisma.plantCell.findFirst({
+      where: { id: parsed.data.cellId, nurseryId: user.nurseryId },
+    });
+    if (!cell) return { error: "The selected cell is not in your nursery." };
+    if (!parsed.data.zoneId || cell.zoneId !== parsed.data.zoneId) {
+      return { error: "The selected cell must belong to the selected zone." };
+    }
+  }
   const task = await prisma.task.create({
     data: {
       type: "GENERAL",

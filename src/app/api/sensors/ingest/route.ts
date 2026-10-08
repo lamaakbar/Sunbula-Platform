@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { validateReading } from "@/services/data-quality";
 import { evaluateReading } from "@/services/alerts/engine";
 import { recordEvent } from "@/services/events";
-import { getKnowledge } from "@/lib/domain/knowledge";
 import type { MetricType } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
@@ -45,12 +44,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, quality }, { status: 422 });
   }
 
-  const cell = await prisma.plantCell.findFirst({
-    where: { zoneId: sensor.zoneId },
-    include: { batches: { where: { isActive: true }, take: 1 } },
-  });
-  const batch = cell?.batches[0];
-  const knowledge = batch ? await getKnowledge(batch.speciesId, batch.growthStage) : null;
+  // Zone-level sensors must not be attributed to an arbitrary cell or batch.
+  const knowledge = null;
   const assignee = await prisma.employeeZoneAssignment.findFirst({ where: { zoneId: sensor.zoneId } });
 
   await prisma.$transaction(async (tx) => {
@@ -71,8 +66,8 @@ export async function POST(request: NextRequest) {
       data: {
         nurseryId: sensor.nurseryId,
         zoneId: sensor.zoneId,
-        plantCellId: cell?.id,
-        batchId: batch?.id,
+        plantCellId: undefined,
+        batchId: undefined,
         sensorId: sensor.id,
         metric: sensor.type,
         value: body.value,
@@ -86,8 +81,8 @@ export async function POST(request: NextRequest) {
       eventType: "SENSOR_READING_RECEIVED",
       nurseryId: sensor.nurseryId,
       zoneId: sensor.zoneId,
-      plantCellId: cell?.id,
-      batchId: batch?.id,
+      plantCellId: undefined,
+      batchId: undefined,
       relatedEntityType: "PlantMeasurement",
       relatedEntityId: measurement.id,
       details: { sensorId: sensor.id, value: body.value, metric: sensor.type },
@@ -95,8 +90,8 @@ export async function POST(request: NextRequest) {
     await evaluateReading(tx, {
       nurseryId: sensor.nurseryId,
       zoneId: sensor.zoneId,
-      plantCellId: cell?.id,
-      batchId: batch?.id,
+      plantCellId: undefined,
+      batchId: undefined,
       metric: sensor.type,
       value: body.value,
       knowledge,

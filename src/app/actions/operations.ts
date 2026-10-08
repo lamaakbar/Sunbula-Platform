@@ -52,6 +52,20 @@ export async function logOperationAction(
 
   await prisma.$transaction(async (tx) => {
     let taskId = parsed.data.taskId || null;
+    if (taskId) {
+      const task = await tx.task.findFirst({
+        where: {
+          id: taskId,
+          assigneeId: user.id,
+          nurseryId: cell.nurseryId,
+          zoneId: cell.zoneId,
+          plantCellId: cell.id,
+          status: { in: ["PENDING", "IN_PROGRESS", "OVERDUE"] },
+          ...(relatedTaskType ? { type: relatedTaskType } : {}),
+        },
+      });
+      if (!task) throw new Error("The selected task is not available for this operation.");
+    }
     if (!taskId && relatedTaskType) {
       const related = await tx.task.findFirst({
         where: {
