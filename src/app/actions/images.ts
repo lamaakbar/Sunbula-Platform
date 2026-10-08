@@ -31,8 +31,22 @@ export async function uploadPlantImageAction(
     orderBy: { createdAt: "desc" },
   });
 
+  const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+  const allowedTypes: Record<string, string> = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+  };
+  if (file.size > MAX_IMAGE_BYTES) return { error: "Images must be 5 MB or smaller." };
+  const ext = allowedTypes[file.type];
+  if (!ext) return { error: "Only JPEG, PNG and WebP images are supported." };
   const bytes = Buffer.from(await file.arrayBuffer());
-  const ext = path.extname(file.name || ".jpg") || ".jpg";
+  const validSignature =
+    (file.type === "image/jpeg" && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) ||
+    (file.type === "image/png" && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) ||
+    (file.type === "image/webp" && bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP");
+  if (!validSignature) return { error: "The uploaded file is not a valid supported image." };
+
   const fileName = `${cell.id}-${Date.now()}${ext}`;
   const dir = path.join(process.cwd(), "public", "uploads");
   await mkdir(dir, { recursive: true });
