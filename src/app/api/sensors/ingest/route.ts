@@ -45,8 +45,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Zone-level sensors must not be attributed to an arbitrary cell or batch.
-  const cell = null;
-  const batch = null;
   const knowledge = null;
   const assignee = await prisma.employeeZoneAssignment.findFirst({ where: { zoneId: sensor.zoneId } });
 
@@ -68,8 +66,8 @@ export async function POST(request: NextRequest) {
       data: {
         nurseryId: sensor.nurseryId,
         zoneId: sensor.zoneId,
-        plantCellId: cell?.id,
-        batchId: batch?.id,
+        plantCellId: undefined,
+        batchId: undefined,
         sensorId: sensor.id,
         metric: sensor.type,
         value: body.value,
@@ -83,8 +81,8 @@ export async function POST(request: NextRequest) {
       eventType: "SENSOR_READING_RECEIVED",
       nurseryId: sensor.nurseryId,
       zoneId: sensor.zoneId,
-      plantCellId: cell?.id,
-      batchId: batch?.id,
+      plantCellId: undefined,
+      batchId: undefined,
       relatedEntityType: "PlantMeasurement",
       relatedEntityId: measurement.id,
       details: { sensorId: sensor.id, value: body.value, metric: sensor.type },
@@ -92,8 +90,8 @@ export async function POST(request: NextRequest) {
     await evaluateReading(tx, {
       nurseryId: sensor.nurseryId,
       zoneId: sensor.zoneId,
-      plantCellId: cell?.id,
-      batchId: batch?.id,
+      plantCellId: undefined,
+      batchId: undefined,
       metric: sensor.type,
       value: body.value,
       knowledge,
