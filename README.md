@@ -1,4 +1,4 @@
-# SANBALA | سنبلة
+# SUNBULLA | سنبلة
 
 Centralized nursery management and decision-support platform.
 
