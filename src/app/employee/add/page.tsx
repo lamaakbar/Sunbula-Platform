@@ -2,9 +2,12 @@ import { AddPlantWizard } from "@/components/forms/AddPlantWizard";
 import { PageHeader } from "@/components/ui/Feedback";
 import { employeeContext } from "@/lib/data/employee";
 import { prisma } from "@/lib/prisma";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function AddPlantPage() {
   const { zone, nurseryName } = await employeeContext();
+  const copy = messages(await getLocale());
   const [species, cells] = await Promise.all([
     prisma.species.findMany({ orderBy: { commonName: "asc" } }),
     prisma.plantCell.findMany({ where: { zoneId: zone.id }, orderBy: { code: "asc" } }),
@@ -12,7 +15,7 @@ export default async function AddPlantPage() {
 
   return (
     <div>
-      <PageHeader title="Add plant / batch" description="A short guided flow — nursery and zone are already filled for you." />
+      <PageHeader title={copy.employee.addTitle} description={copy.employee.addLead} />
       <AddPlantWizard
         nurseryName={nurseryName}
         zoneName={zone.name}

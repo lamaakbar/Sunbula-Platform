@@ -17,7 +17,7 @@ export async function getSupervisorOverview() {
   const allCells = zones.flatMap((item) => item.cells);
   const summary = zoneHealthSummary(allCells);
 
-  const [batches, inventory, alerts, tasksToday, operations, overdue] = await Promise.all([
+  const [batches, inventory, alerts, tasksToday, operations, overdue, pendingUpdates] = await Promise.all([
     prisma.seedlingBatch.findMany({
       where: { nurseryId: ctx.nurseryId, isActive: true },
     }),
@@ -46,6 +46,9 @@ export async function getSupervisorOverview() {
     prisma.task.count({
       where: { nurseryId: ctx.nurseryId, status: "OVERDUE" },
     }),
+    prisma.batchUpdate.count({
+      where: { nurseryId: ctx.nurseryId, status: "PENDING" },
+    }),
   ]);
 
   const totalSeedlings = batches.reduce((sum, item) => sum + item.quantity, 0);
@@ -64,6 +67,7 @@ export async function getSupervisorOverview() {
     tasksToday,
     operations,
     overdue,
+    pendingUpdates,
     inventory,
     batches,
   };

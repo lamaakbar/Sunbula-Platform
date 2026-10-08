@@ -5,10 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { Breadcrumbs, PageHeader, StatCard } from "@/components/ui/Feedback";
 import { ZoneCard } from "@/components/data/Cards";
 import { nurseryStatusFromScore } from "@/lib/domain/health";
-import { numberFmt, operationLabel, relativeTime } from "@/lib/format";
+import { numberFmt } from "@/lib/format";
+import { messages, relativeText } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function HqNurseryPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("HQ");
+  const locale = await getLocale();
+  const copy = messages(locale);
   const { id } = await params;
   const nursery = await prisma.nursery.findUnique({ where: { id } });
   if (!nursery) notFound();
@@ -26,13 +30,13 @@ export default async function HqNurseryPage({ params }: { params: Promise<{ id: 
 
   return (
     <div>
-      <Breadcrumbs items={[{ href: "/hq", label: "Network" }, { label: nursery.name }]} />
-      <PageHeader title={nursery.name} description={`${nursery.region} · drill down into zones without leaving HQ scope.`} />
+      <Breadcrumbs items={[{ href: "/hq", label: copy.chrome.network }, { label: nursery.name }]} />
+      <PageHeader title={nursery.name} description={`${nursery.region} · ${copy.hq.drill}`} />
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Ready stock" value={numberFmt(ready._sum.quantity ?? 0)} />
-        <StatCard label="Zones" value={zones.length} />
-        <StatCard label="Recent operations" value={operations.length} />
-        <StatCard label="Capacity" value={numberFmt(nursery.capacity)} />
+        <StatCard label={copy.hq.readyStock} value={numberFmt(ready._sum.quantity ?? 0)} />
+        <StatCard label={copy.hq.zones} value={zones.length} />
+        <StatCard label={copy.hq.recentOps} value={operations.length} />
+        <StatCard label={copy.hq.capacity} value={numberFmt(nursery.capacity)} />
       </section>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {zones.map((item) => (
@@ -52,10 +56,10 @@ export default async function HqNurseryPage({ params }: { params: Promise<{ id: 
           {operations.map((op) => (
             <li key={op.id} className="rounded-3xl border border-sand bg-white px-5 py-4">
               <p className="font-semibold text-forest">
-                {operationLabel[op.type]} · {op.zone.name} {op.plantCell ? `· ${op.plantCell.code}` : ""}
+                {copy.operation[op.type]} · {op.zone.name} {op.plantCell ? `· ${op.plantCell.code}` : ""}
               </p>
               <p className="text-sm text-muted">
-                {op.user.fullName} · {relativeTime(op.occurredAt)}
+                {op.user.fullName} · {relativeText(locale, op.occurredAt)}
               </p>
             </li>
           ))}

@@ -120,6 +120,13 @@ export const taskStatusLabel: Record<TaskStatus, string> = {
   OVERDUE: "Overdue",
 };
 
+export const batchUpdateStatusLabel = {
+  PENDING: "Pending review",
+  NEEDS_REVISION: "Needs revision",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+} as const;
+
 export const requestStatusLabel: Record<RequestStatus, string> = {
   PENDING: "Pending",
   UNDER_REVIEW: "Under review",

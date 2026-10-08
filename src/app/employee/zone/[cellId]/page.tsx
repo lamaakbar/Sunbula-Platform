@@ -8,7 +8,9 @@ import { Breadcrumbs, PageHeader } from "@/components/ui/Feedback";
 import { HealthBadge } from "@/components/data/HealthBadge";
 import { ReadingCard } from "@/components/data/OpsCards";
 import { SavedToast } from "@/components/feedback/SavedToast";
-import { formatDate, growthLabel, metricLabel, operationLabel, plantAgeLabel, relativeTime, sourceLabel } from "@/lib/format";
+import { formatDate, plantAgeLabel } from "@/lib/format";
+import { messages, relativeText } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { readingMeaning } from "@/services/data-quality";
 import { rangeForMetric, recommendationFor } from "@/services/recommendations";
 
@@ -20,6 +22,8 @@ export default async function CellDetailPage({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const user = await requireRole("EMPLOYEE");
+  const locale = await getLocale();
+  const copy = messages(locale);
   const { cellId } = await params;
   const { saved } = await searchParams;
   await getAccessibleCell(user, cellId);
@@ -37,43 +41,43 @@ export default async function CellDetailPage({
       <SavedToast value={saved} />
       <Breadcrumbs
         items={[
-          { href: "/employee", label: "Home" },
+          { href: "/employee", label: copy.common.home },
           { href: "/employee/zone", label: cell.zone.name },
           { label: cell.code },
         ]}
       />
       <PageHeader
         eyebrow={`${cell.nursery.name} · ${cell.zone.name}`}
-        title={`Cell ${cell.code}`}
-        description={batch ? `${batch.species.commonName} · ${batch.code}` : "This cell does not have an active plant yet."}
+        title={`${copy.forms.cell} ${cell.code}`}
+        description={batch ? `${batch.species.commonName} · ${batch.code}` : copy.employee.noneYet}
       />
 
       <div className="flex flex-wrap items-center gap-3">
         <HealthBadge status={health} />
-        {batch ? <span className="text-sm text-muted">{growthLabel[batch.growthStage]}</span> : null}
+        {batch ? <span className="text-sm text-muted">{copy.growth[batch.growthStage]}</span> : null}
       </div>
 
       <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Info label="Species" value={batch?.species.commonName ?? "—"} />
-        <Info label="Batch" value={batch?.code ?? "—"} />
-        <Info label="Quantity" value={batch ? String(batch.quantity) : "—"} />
-        <Info label="Age" value={batch ? plantAgeLabel(batch.plantingDate) : "—"} />
-        <Info label="Planting date" value={batch ? formatDate(batch.plantingDate) : "—"} />
-        <Info label="Growth stage" value={batch ? growthLabel[batch.growthStage] : "—"} />
-        <Info label="Last reading" value={moisture ? `${moisture.value}${moisture.unit}` : "None yet"} />
-        <Info label="Last operation" value={cell.operations[0] ? `${operationLabel[cell.operations[0].type]} · ${relativeTime(cell.operations[0].occurredAt)}` : "None yet"} />
+        <Info label={copy.employee.species} value={batch?.species.commonName ?? "—"} />
+        <Info label={copy.employee.batch} value={batch?.code ?? "—"} />
+        <Info label={copy.employee.quantity} value={batch ? String(batch.quantity) : "—"} />
+        <Info label={copy.employee.age} value={batch ? plantAgeLabel(batch.plantingDate) : "—"} />
+        <Info label={copy.employee.planting} value={batch ? formatDate(batch.plantingDate) : "—"} />
+        <Info label={copy.employee.stage} value={batch ? copy.growth[batch.growthStage] : "—"} />
+        <Info label={copy.employee.lastReading} value={moisture ? `${moisture.value}${moisture.unit}` : copy.employee.noneYet} />
+        <Info label={copy.employee.lastOp} value={cell.operations[0] ? `${copy.operation[cell.operations[0].type]} · ${relativeText(locale, cell.operations[0].occurredAt)}` : copy.employee.noneYet} />
       </section>
 
       {moisture ? (
         <div className="mt-6 max-w-md">
           <ReadingCard
-            label={metricLabel.SOIL_MOISTURE}
+            label={copy.metric.SOIL_MOISTURE}
             value={String(moisture.value)}
             unit={moisture.unit}
             meaning={meaning}
             expected={range ? `${range.min}–${range.max}%` : undefined}
-            source={`${sourceLabel[moisture.source]}${moisture.recordedBy ? ` · ${moisture.recordedBy.fullName}` : ""}`}
-            updated={relativeTime(moisture.timestamp)}
+            source={`${copy.source[moisture.source]}${moisture.recordedBy ? ` · ${moisture.recordedBy.fullName}` : ""}`}
+            updated={relativeText(locale, moisture.timestamp)}
           />
           {rec && meaning !== "NORMAL" ? (
             <p className="mt-3 rounded-[1.3rem] bg-light-sage px-4 py-3 text-sm leading-6 text-forest">
@@ -85,7 +89,7 @@ export default async function CellDetailPage({
 
       {cell.alerts.length > 0 ? (
         <section className="mt-6 space-y-3">
-          <h2 className="text-xl font-semibold text-forest">Recent alerts</h2>
+          <h2 className="text-xl font-semibold text-forest">{copy.employee.recentAlerts}</h2>
           {cell.alerts.map((alert) => (
             <article key={alert.id} className="rounded-[1.5rem] bg-white p-4 ring-1 ring-attention/30">
               <p className="font-semibold text-forest">{alert.title}</p>
@@ -96,12 +100,12 @@ export default async function CellDetailPage({
       ) : null}
 
       <section className="mt-8 grid gap-3 sm:grid-cols-2">
-        <ActionLink href={`/employee/zone/${cell.id}/operate`} icon={Droplets} label="Log operation" primary />
-        <ActionLink href={`/employee/zone/${cell.id}/reading`} icon={Plus} label="Add reading" />
-        <ActionLink href={`/employee/zone/${cell.id}/image`} icon={Camera} label="Upload plant image" />
-        <ActionLink href={`/employee/zone/${cell.id}/history`} icon={History} label="View history" />
+        <ActionLink href={`/employee/zone/${cell.id}/operate`} icon={Droplets} label={copy.employee.logOp} primary />
+        <ActionLink href={`/employee/zone/${cell.id}/reading`} icon={Plus} label={copy.employee.addReading} />
+        <ActionLink href={`/employee/zone/${cell.id}/image`} icon={Camera} label={copy.employee.upload} />
+        <ActionLink href={`/employee/zone/${cell.id}/history`} icon={History} label={copy.employee.historyTitle} />
         {cell.tasks[0] ? (
-          <ActionLink href={`/employee/tasks`} icon={ClipboardList} label="Open related task" />
+          <ActionLink href={`/employee/tasks`} icon={ClipboardList} label={copy.employee.tasksTitle} />
         ) : null}
       </section>
     </div>

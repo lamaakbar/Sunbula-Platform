@@ -64,6 +64,19 @@ export const productionTargetSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const batchUpdateSchema = z.object({
+  batchId: z.string().min(1, "Select a batch."),
+  quantity: z.coerce.number().int().positive("Quantity must be greater than zero."),
+  growthStage: z.enum(["SEEDLING", "GROWING", "READY", "DISTRIBUTED"]),
+  notes: z.string().trim().min(8, "Describe what changed in at least a few words."),
+});
+
+export const batchReviewSchema = z.object({
+  updateId: z.string().min(1),
+  decision: z.enum(["approve", "reject", "revise"]),
+  feedback: z.string().trim().optional(),
+});
+
 export const assignTaskSchema = z.object({
   assigneeId: z.string().min(1),
   title: z.string().min(1),

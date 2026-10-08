@@ -3,6 +3,8 @@ import type { HealthStatus } from "@prisma/client";
 import { HealthBadge } from "@/components/data/HealthBadge";
 import { BotanicalMark } from "@/components/brand/BotanicalMark";
 import { healthTone } from "@/lib/domain/health";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { cn } from "@/lib/cn";
 
 export function PlantCellCard({
@@ -75,7 +77,7 @@ export function ZoneCard({
   );
 }
 
-export function NurseryCard({
+export async function NurseryCard({
   href,
   name,
   health,
@@ -90,6 +92,7 @@ export function NurseryCard({
   readyStock: string;
   alerts: number;
 }) {
+  const copy = messages(await getLocale());
   return (
     <article className="card-lift relative overflow-hidden rounded-[1.8rem] bg-white p-6 ring-1 ring-sand">
       <BotanicalMark className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 text-sage/20" variant="canopy" />
@@ -99,20 +102,20 @@ export function NurseryCard({
       </div>
       <dl className="relative mt-5 grid grid-cols-3 gap-3 text-sm">
         <div className="rounded-2xl bg-cream/80 px-3 py-3">
-          <dt className="text-muted">Production</dt>
+          <dt className="text-muted">{copy.hq.production}</dt>
           <dd className="mt-1 font-semibold text-ink">{production}</dd>
         </div>
         <div className="rounded-2xl bg-cream/80 px-3 py-3">
-          <dt className="text-muted">Ready stock</dt>
+          <dt className="text-muted">{copy.hq.readyStock}</dt>
           <dd className="mt-1 font-semibold text-ink">{readyStock}</dd>
         </div>
         <div className="rounded-2xl bg-cream/80 px-3 py-3">
-          <dt className="text-muted">Alerts</dt>
+          <dt className="text-muted">{copy.supervisor.alertsTitle}</dt>
           <dd className="mt-1 font-semibold text-ink">{alerts}</dd>
         </div>
       </dl>
       <Link href={href} className="relative mt-5 inline-flex min-h-11 items-center rounded-2xl bg-light-sage px-4 text-sm font-semibold text-forest">
-        Open nursery
+        {copy.hq.openNursery}
       </Link>
     </article>
   );

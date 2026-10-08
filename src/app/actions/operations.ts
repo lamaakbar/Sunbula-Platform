@@ -16,7 +16,7 @@ const TASK_TYPE_FOR_OPERATION: Partial<Record<OperationType, TaskType>> = {
   INSPECTION: "INSPECTION",
 };
 
-export type ActionState = { error?: string; ok?: string };
+export type ActionState = { error?: string; ok?: string; values?: Record<string, string> };
 
 export async function logOperationAction(
   _prev: ActionState,

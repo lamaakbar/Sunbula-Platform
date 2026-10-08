@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/ui/Feedback";
 import { ProductionTargetForm } from "@/components/forms/ProductionTargetForm";
 import { SavedToast } from "@/components/feedback/SavedToast";
 import { formatDate, numberFmt } from "@/lib/format";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function ProductionPage({
   searchParams,
@@ -11,6 +13,7 @@ export default async function ProductionPage({
   searchParams: Promise<{ saved?: string }>;
 }) {
   await requireRole("HQ");
+  const copy = messages(await getLocale());
   const { saved } = await searchParams;
   const [nurseries, species, targets] = await Promise.all([
     prisma.nursery.findMany({ orderBy: { name: "asc" } }),
@@ -25,7 +28,7 @@ export default async function ProductionPage({
     <div className="grid gap-8 lg:grid-cols-2">
       <SavedToast value={saved} />
       <div>
-        <PageHeader title="Production planning" description="Allocate targets to nurseries. Transfer between nurseries is not assumed." />
+        <PageHeader title={copy.hq.productionTitle} description={copy.hq.productionLead} />
         <ProductionTargetForm
           nurseries={nurseries.map((item) => ({ id: item.id, name: item.name }))}
           species={species.map((item) => ({ id: item.id, commonName: item.commonName }))}

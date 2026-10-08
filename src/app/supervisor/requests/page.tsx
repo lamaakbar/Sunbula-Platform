@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/Feedback";
 import { RequestForm } from "@/components/forms/RequestForm";
 import { SavedToast } from "@/components/feedback/SavedToast";
-import { formatDate, requestStatusLabel } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function SupervisorRequestsPage({
   searchParams,
@@ -11,6 +13,7 @@ export default async function SupervisorRequestsPage({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const { nurseryId, nurseryName } = await supervisorContext();
+  const copy = messages(await getLocale());
   const { saved } = await searchParams;
   const [species, requests, inventory] = await Promise.all([
     prisma.species.findMany({ orderBy: { commonName: "asc" } }),
@@ -26,7 +29,7 @@ export default async function SupervisorRequestsPage({
     <div className="grid gap-8 lg:grid-cols-2">
       <SavedToast value={saved} />
       <div>
-        <PageHeader title="Request seedlings" description="Requests go to HQ. You can track review status here." />
+        <PageHeader title={copy.supervisor.requestsTitle} description={copy.supervisor.requestsLead} />
         <RequestForm
           nurseryName={nurseryName}
           species={species.map((item) => ({
@@ -37,7 +40,7 @@ export default async function SupervisorRequestsPage({
         />
       </div>
       <div>
-        <h2 className="text-xl font-semibold text-forest">Submitted requests</h2>
+        <h2 className="text-xl font-semibold text-forest">{copy.supervisor.submitted}</h2>
         <ul className="mt-4 space-y-3">
           {requests.map((request) => (
             <li key={request.id} className="rounded-3xl border border-sand bg-white p-4">
@@ -45,7 +48,7 @@ export default async function SupervisorRequestsPage({
                 {request.species.commonName} · {request.quantity}
               </p>
               <p className="text-sm text-muted">
-                {requestStatusLabel[request.status]} · required {formatDate(request.requiredDate)}
+                {copy.request[request.status]} · {copy.supervisor.required} {formatDate(request.requiredDate)}
               </p>
             </li>
           ))}

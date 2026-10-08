@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, Manrope } from "next/font/google";
+import { getLocale } from "@/lib/locale";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -16,7 +17,7 @@ const ibmArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "SUNBULA | سنبلة",
+  title: "SUNBULLA",
   description: "From every seedling to every nursery — one connected view.",
 };
 
@@ -26,15 +27,19 @@ export const viewport: Viewport = {
   themeColor: "#163D2A",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
   return (
     <html
-      lang="en"
+      lang={locale}
+      dir={locale === "ar" ? "rtl" : "ltr"}
       className={`${manrope.variable} ${ibmArabic.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-cream font-sans text-ink">{children}</body>
+      <body className={locale === "ar" ? "min-h-full bg-cream font-arabic text-ink" : "min-h-full bg-cream font-sans text-ink"}>
+        {children}
+      </body>
     </html>
   );
 }

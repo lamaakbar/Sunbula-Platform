@@ -3,10 +3,13 @@ import { getAccessibleCell } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/prisma";
 import { Breadcrumbs, EmptyState, PageHeader } from "@/components/ui/Feedback";
 import { formatDateTime } from "@/lib/format";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { parseEventDetails } from "@/services/events";
 
 export default async function CellHistoryPage({ params }: { params: Promise<{ cellId: string }> }) {
   const user = await requireRole("EMPLOYEE");
+  const copy = messages(await getLocale());
   const { cellId } = await params;
   const cell = await getAccessibleCell(user, cellId);
   const events = await prisma.eventHistory.findMany({
@@ -18,10 +21,10 @@ export default async function CellHistoryPage({ params }: { params: Promise<{ ce
 
   return (
     <div>
-      <Breadcrumbs items={[{ href: `/employee/zone/${cell.id}`, label: cell.code }, { label: "History" }]} />
-      <PageHeader title={`History · ${cell.code}`} description="Every important change for this cell is kept here." />
+      <Breadcrumbs items={[{ href: `/employee/zone/${cell.id}`, label: cell.code }, { label: copy.employee.historyTitle }]} />
+      <PageHeader title={`${copy.employee.historyTitle} · ${cell.code}`} description={copy.employee.cellHistory} />
       {events.length === 0 ? (
-        <EmptyState title="No history yet" description="When you add plants, readings or operations, they will appear here." />
+        <EmptyState title={copy.employee.noHistory} description={copy.employee.noHistoryBody} />
       ) : (
         <ol className="space-y-3">
           {events.map((event) => {

@@ -34,6 +34,7 @@ export function navigationFor(role: Role): { primary: NavItem[]; more: NavItem[]
         { href: "/employee/tasks", label: "Tasks", icon: ListChecks, mobile: true },
       ],
       more: [
+        { href: "/employee/updates", label: "Batch updates", icon: ClipboardList },
         { href: "/employee/monitoring", label: "Readings", icon: BarChart3 },
         { href: "/employee/alerts", label: "Alerts", icon: Bell },
         { href: "/employee/inventory", label: "Inventory", icon: Package },
@@ -53,6 +54,7 @@ export function navigationFor(role: Role): { primary: NavItem[]; more: NavItem[]
       more: [
         { href: "/supervisor/insights", label: "Insights & Reports", icon: BarChart3 },
         { href: "/supervisor/requests", label: "Seedling Requests", icon: ClipboardList },
+        { href: "/supervisor/updates", label: "Batch updates", icon: ClipboardList },
         { href: "/supervisor/alerts", label: "Alerts", icon: Bell },
         { href: "/supervisor/knowledge", label: "Knowledge Base", icon: BookOpen },
         { href: "/supervisor/profile", label: "Profile", icon: UserRound },

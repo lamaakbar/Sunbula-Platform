@@ -134,6 +134,13 @@ enum RequestStatus {
   COMPLETED
 }
 
+enum BatchUpdateStatus {
+  PENDING
+  NEEDS_REVISION
+  APPROVED
+  REJECTED
+}
+
 enum RequestPriority {
   LOW
   MEDIUM
@@ -159,6 +166,11 @@ enum EventType {
   REQUEST_REJECTED
   REQUEST_UNDER_REVIEW
   IMAGE_UPLOADED
+  BATCH_UPDATE_SUBMITTED
+  BATCH_UPDATE_RESUBMITTED
+  BATCH_UPDATE_APPROVED
+  BATCH_UPDATE_REJECTED
+  BATCH_UPDATE_REVISION_REQUESTED
 }
 
 model Nursery {
@@ -185,6 +197,7 @@ model Nursery {
   requests           SeedlingRequest[]
   productionTargets  ProductionTarget[]
   events             EventHistory[]
+  batchUpdates       BatchUpdate[]
 }
 
 model User {
@@ -211,6 +224,8 @@ model User {
   requestsReviewed    SeedlingRequest[]          @relation("RequestReviewer")
   productionTargets   ProductionTarget[]
   events              EventHistory[]
+  batchUpdatesSent    BatchUpdate[]              @relation("BatchUpdateSubmitter")
+  batchUpdatesReviewed BatchUpdate[]             @relation("BatchUpdateReviewer")
 
   @@index([role])
   @@index([nurseryId])
@@ -250,6 +265,7 @@ model Zone {
   tasks           Task[]
   productionTargets ProductionTarget[]
   events          EventHistory[]
+  batchUpdates    BatchUpdate[]
 
   @@unique([nurseryId, code])
   @@index([nurseryId])
@@ -327,6 +343,7 @@ model SeedlingBatch {
   recommendations Recommendation[]
   tasks           Task[]
   events          EventHistory[]
+  batchUpdates    BatchUpdate[]
 
   @@index([nurseryId])
   @@index([zoneId])
@@ -634,6 +651,35 @@ model PlantKnowledgeBase {
   species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
 
   @@unique([speciesId, growthStage])
+}
+
+model BatchUpdate {
+  id               String            @id @default(cuid())
+  batchId          String
+  nurseryId        String
+  zoneId           String
+  submittedById    String
+  previousQuantity Int
+  previousStage    GrowthStage
+  proposedQuantity Int
+  proposedStage    GrowthStage
+  notes            String
+  status           BatchUpdateStatus @default(PENDING)
+  feedback         String?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  batch       SeedlingBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  nursery     Nursery       @relation(fields: [nurseryId], references: [id], onDelete: Cascade)
+  zone        Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  submittedBy User          @relation("BatchUpdateSubmitter", fields: [submittedById], references: [id])
+  reviewedBy  User?         @relation("BatchUpdateReviewer", fields: [reviewedById], references: [id])
+
+  @@index([nurseryId, status])
+  @@index([submittedById, status])
+  @@index([batchId, status])
 }
 
 model EventHistory {

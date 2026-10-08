@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/Feedback";
 import { ReviewActions } from "@/components/forms/ReviewActions";
 import { SavedToast } from "@/components/feedback/SavedToast";
-import { formatDate, numberFmt, requestStatusLabel } from "@/lib/format";
+import { formatDate, numberFmt } from "@/lib/format";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { RequestStatus } from "@prisma/client";
 
 export default async function HqRequestsPage({
@@ -13,6 +15,7 @@ export default async function HqRequestsPage({
   searchParams: Promise<{ tab?: string; saved?: string }>;
 }) {
   await requireRole("HQ");
+  const copy = messages(await getLocale());
   const { tab, saved } = await searchParams;
   const status = tab && tab !== "ALL" && tab !== "URGENT" ? (tab as RequestStatus) : undefined;
   const requests = await prisma.seedlingRequest.findMany({
@@ -29,7 +32,7 @@ export default async function HqRequestsPage({
   return (
     <div>
       <SavedToast value={saved} />
-      <PageHeader title="Request center" description="Operational inbox for nursery seedling requests." />
+      <PageHeader title={copy.hq.requestsTitle} description={copy.hq.requestsLead} />
       <div className="mb-6 flex flex-wrap gap-2">
         {tabs.map((item) => (
           <Link
@@ -47,7 +50,7 @@ export default async function HqRequestsPage({
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-sand px-2.5 py-1 text-xs font-semibold">{request.priority}</span>
               <span className="rounded-full bg-light-sage px-2.5 py-1 text-xs font-semibold text-leaf">
-                {requestStatusLabel[request.status]}
+                {copy.request[request.status]}
               </span>
             </div>
             <h2 className="mt-3 text-xl font-semibold text-forest">

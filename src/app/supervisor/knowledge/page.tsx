@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/Feedback";
-import { growthLabel } from "@/lib/format";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function KnowledgePage({
   searchParams,
@@ -8,6 +9,7 @@ export default async function KnowledgePage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
+  const copy = messages(await getLocale());
   const query = q?.trim();
   const entries = await prisma.plantKnowledgeBase.findMany({
     where: query
@@ -25,7 +27,7 @@ export default async function KnowledgePage({
 
   return (
     <div>
-      <PageHeader title="Plant knowledge base" description="Expected ranges that give readings their meaning. Source: SUNBULA demo knowledge, not official ministry data." />
+      <PageHeader title={copy.supervisor.knowledgeTitle} description={copy.supervisor.knowledgeLead} />
       <form className="mb-6">
         <label className="sr-only" htmlFor="q">
           Search species
@@ -34,7 +36,7 @@ export default async function KnowledgePage({
           id="q"
           name="q"
           defaultValue={query}
-          placeholder="Search Acacia, Ghaf, Sidr…"
+          placeholder={copy.supervisor.searchPlants}
           className="w-full max-w-lg rounded-2xl border border-sand bg-white px-4 py-3"
         />
       </form>
@@ -43,7 +45,7 @@ export default async function KnowledgePage({
           <article key={entry.id} className="rounded-3xl border border-sand bg-white p-5">
             <p className="text-lg font-semibold text-forest">{entry.species.commonName}</p>
             <p className="text-sm text-muted">
-              {entry.species.scientificName} · {growthLabel[entry.growthStage]}
+              {entry.species.scientificName} · {copy.growth[entry.growthStage]}
             </p>
             <dl className="mt-4 grid grid-cols-3 gap-3 text-sm">
               <div>

@@ -2,10 +2,13 @@ import { employeeContext } from "@/lib/data/employee";
 import { prisma } from "@/lib/prisma";
 import { EmptyState, PageHeader } from "@/components/ui/Feedback";
 import { formatDateTime } from "@/lib/format";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { parseEventDetails } from "@/services/events";
 
 export default async function HistoryPage() {
   const { user, zone } = await employeeContext();
+  const copy = messages(await getLocale());
   const events = await prisma.eventHistory.findMany({
     where: {
       OR: [{ userId: user.id }, { zoneId: zone.id }],
@@ -17,9 +20,9 @@ export default async function HistoryPage() {
 
   return (
     <div>
-      <PageHeader title="History" description="Your recent actions and zone events." />
+      <PageHeader title={copy.employee.historyTitle} description={copy.employee.historyLead} />
       {events.length === 0 ? (
-        <EmptyState title="No activity yet" description="Logged operations, readings and completed tasks will show here." />
+        <EmptyState title={copy.employee.noActivity} description={copy.employee.noActivityBody} />
       ) : (
         <ol className="space-y-3">
           {events.map((event) => (

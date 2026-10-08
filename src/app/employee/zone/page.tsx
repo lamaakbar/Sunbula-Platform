@@ -3,38 +3,41 @@ import { getEmployeeHome } from "@/lib/data/employee";
 import { PageHeader, StatCard } from "@/components/ui/Feedback";
 import { PlantCellCard } from "@/components/data/Cards";
 import { Button } from "@/components/ui/Button";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function MyZonePage() {
   const data = await getEmployeeHome();
+  const copy = messages(await getLocale());
 
   return (
     <div>
       <PageHeader
         eyebrow={data.nurseryName}
         title={data.zone.name}
-        description="Your assigned cells. Open any cell to log work, add a reading, or view history."
+        description={copy.employee.zoneLead}
         actions={
           <Link href="/employee/add">
-            <Button>Add plant / batch</Button>
+            <Button>{copy.employee.addTitle}</Button>
           </Link>
         }
       />
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Healthy" value={data.summary.healthy} tone="healthy" />
-        <StatCard label="Needs attention" value={data.summary.attention} tone="attention" />
-        <StatCard label="Critical" value={data.summary.critical} tone="critical" />
-        <StatCard label="No recent data" value={data.summary.noData} />
+        <StatCard label={copy.employee.healthy} value={data.summary.healthy} tone="healthy" />
+        <StatCard label={copy.employee.needsAttention} value={data.summary.attention} tone="attention" />
+        <StatCard label={copy.employee.critical} value={data.summary.critical} tone="critical" />
+        <StatCard label={copy.employee.noData} value={data.summary.noData} />
       </section>
 
       <section className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
         <StatCard
-          label="Average moisture"
+          label={copy.employee.avgMoisture}
           value={data.avgMoisture == null ? "—" : `${data.avgMoisture}%`}
           tone="water"
         />
-        <StatCard label="Operations today" value={data.operationsToday} />
-        <StatCard label="Open alerts" value={data.alerts} tone={data.alerts ? "attention" : "default"} />
+        <StatCard label={copy.employee.opsToday} value={data.operationsToday} />
+        <StatCard label={copy.employee.openAlerts} value={data.alerts} tone={data.alerts ? "attention" : "default"} />
       </section>
 
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">

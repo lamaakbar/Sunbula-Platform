@@ -3,9 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader, StatCard } from "@/components/ui/Feedback";
 import { getForecastingService } from "@/services/forecasting";
 import { numberFmt } from "@/lib/format";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function InsightsPage() {
   const { nurseryId, nurseryName } = await supervisorContext();
+  const copy = messages(await getLocale());
   const forecast = getForecastingService();
   const [demandNote, shortageNote] = await Promise.all([forecast.demand(), forecast.shortage()]);
 
@@ -25,7 +28,7 @@ export default async function InsightsPage() {
 
   return (
     <div>
-      <PageHeader eyebrow={nurseryName} title="Insights & reports" description="Operational comparisons from nursery records. Predictive models are not active in this MVP." />
+      <PageHeader eyebrow={nurseryName} title={copy.supervisor.insightsTitle} description={copy.supervisor.insightsLead} />
 
       <section className="mt-2">
         <h2 className="text-xl font-semibold text-forest">Demand</h2>

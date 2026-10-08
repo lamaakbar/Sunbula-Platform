@@ -16,7 +16,7 @@ export async function getEmployeeHome() {
   const cells = await getZoneCells(ctx.zone.id);
   const summary = zoneHealthSummary(cells);
 
-  const [tasks, alerts, operationsToday, moisture] = await Promise.all([
+  const [tasks, alerts, operationsToday, moisture, updates] = await Promise.all([
     prisma.task.findMany({
       where: {
         assigneeId: ctx.user.id,
@@ -39,6 +39,10 @@ export async function getEmployeeHome() {
       orderBy: { timestamp: "desc" },
       take: 80,
     }),
+    prisma.batchUpdate.findMany({
+      where: { submittedById: ctx.user.id, zoneId: ctx.zone.id },
+      select: { status: true },
+    }),
   ]);
 
   const avgMoisture =
@@ -46,7 +50,17 @@ export async function getEmployeeHome() {
       ? null
       : Math.round(moisture.reduce((sum, item) => sum + item.value, 0) / moisture.length);
 
-  return { ...ctx, cells, summary, tasks, alerts, operationsToday, avgMoisture };
+  return {
+    ...ctx,
+    cells,
+    summary,
+    tasks,
+    alerts,
+    operationsToday,
+    avgMoisture,
+    pendingUpdates: updates.filter((item) => item.status === "PENDING").length,
+    revisionUpdates: updates.filter((item) => item.status === "NEEDS_REVISION").length,
+  };
 }
 
 export function startOfDay(date = new Date()) {

@@ -3,6 +3,8 @@ import { getAccessibleCell } from "@/lib/auth/rbac";
 import { Breadcrumbs, PageHeader } from "@/components/ui/Feedback";
 import { OperationForm } from "@/components/forms/OperationForm";
 import type { OperationType } from "@prisma/client";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function OperatePage({
   params,
@@ -12,6 +14,7 @@ export default async function OperatePage({
   searchParams: Promise<{ type?: string; taskId?: string }>;
 }) {
   const user = await requireRole("EMPLOYEE");
+  const copy = messages(await getLocale());
   const { cellId } = await params;
   const query = await searchParams;
   const cell = await getAccessibleCell(user, cellId);
@@ -23,10 +26,10 @@ export default async function OperatePage({
         items={[
           { href: "/employee/zone", label: cell.zone.name },
           { href: `/employee/zone/${cell.id}`, label: cell.code },
-          { label: "Log operation" },
+          { label: copy.employee.logOp },
         ]}
       />
-      <PageHeader title="Log operation" description="Choose what you did, then save. SUNBULA will update history and any related task." />
+      <PageHeader title={copy.employee.logOp} description={copy.employee.logOpLead} />
       <OperationForm
         cellId={cell.id}
         cellCode={cell.code}

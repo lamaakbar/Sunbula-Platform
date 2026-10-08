@@ -3,9 +3,12 @@ import { employeeContext } from "@/lib/data/employee";
 import { prisma } from "@/lib/prisma";
 import { EmptyState, PageHeader } from "@/components/ui/Feedback";
 import { AlertCard } from "@/components/data/OpsCards";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function EmployeeAlertsPage() {
   const { zone } = await employeeContext();
+  const copy = messages(await getLocale());
   const alerts = await prisma.alert.findMany({
     where: { zoneId: zone.id, status: { in: ["OPEN", "ACKNOWLEDGED"] } },
     include: { plantCell: true, recommendations: true },
@@ -16,16 +19,16 @@ export default async function EmployeeAlertsPage() {
     <div>
       <PageHeader
         eyebrow={zone.name}
-        title="Alerts"
-        description="Issues in your assigned zone. Open the plant cell to record work or add a reading."
+        title={copy.employee.alertsTitle}
+        description={copy.employee.alertsLead}
       />
       {alerts.length === 0 ? (
         <EmptyState
-          title="No alerts"
-          description="Nothing in your zone currently needs attention."
+          title={copy.employee.noAlerts}
+          description={copy.employee.noAlertsBody}
           action={
             <Link href="/employee/zone" className="font-semibold text-forest">
-              Open my zone
+              {copy.employee.openMyZone}
             </Link>
           }
         />

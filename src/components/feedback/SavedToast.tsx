@@ -2,25 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-
-const MESSAGES: Record<string, string> = {
-  operation: "Operation recorded successfully.",
-  reading: "Reading saved.",
-  plant: "Plant successfully added.",
-  image: "Plant image uploaded.",
-  inventory: "Inventory updated.",
-  request: "Request submitted to HQ.",
-  review: "Request updated.",
-  task: "Task assigned.",
-  target: "Production target saved.",
-};
+import { useMessages } from "@/components/i18n/LocaleProvider";
 
 export function SavedToast({ value }: { value?: string }) {
-  const message = value ? MESSAGES[value] : undefined;
+  const toast = useMessages().toast;
+  const message = value && value in toast ? toast[value as keyof typeof toast] : undefined;
   const [dismissed, setDismissed] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!value || !MESSAGES[value]) return;
+    if (!value || !(value in toast)) return;
     const timer = window.setTimeout(() => setDismissed(value), 4200);
     return () => window.clearTimeout(timer);
   }, [value]);

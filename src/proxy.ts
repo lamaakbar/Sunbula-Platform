@@ -13,7 +13,7 @@ function homeFor(role: Role) {
   return ROLE_HOME[role];
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isEmployee = pathname.startsWith("/employee");
   const isSupervisor = pathname.startsWith("/supervisor");

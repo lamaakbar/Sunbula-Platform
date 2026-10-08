@@ -5,7 +5,8 @@ import { getZoneCells, zoneHealthSummary } from "@/lib/data/cells";
 import { prisma } from "@/lib/prisma";
 import { Breadcrumbs, PageHeader, StatCard } from "@/components/ui/Feedback";
 import { PlantCellCard } from "@/components/data/Cards";
-import { relativeTime } from "@/lib/format";
+import { messages, relativeText } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export default async function SupervisorZoneDetailPage({
   params,
@@ -13,6 +14,8 @@ export default async function SupervisorZoneDetailPage({
   params: Promise<{ zoneId: string }>;
 }) {
   const user = await requireRole("SUPERVISOR");
+  const locale = await getLocale();
+  const copy = messages(locale);
   const { zoneId } = await params;
   const zone = await getAccessibleZone(user, zoneId);
   const cells = await getZoneCells(zone.id);
@@ -28,13 +31,13 @@ export default async function SupervisorZoneDetailPage({
 
   return (
     <div>
-      <Breadcrumbs items={[{ href: "/supervisor", label: zone.nursery.name }, { href: "/supervisor/zones", label: "Zones" }, { label: zone.name }]} />
-      <PageHeader title={zone.name} description="Cell-level view for this zone, including recent employee operations." />
+      <Breadcrumbs items={[{ href: "/supervisor", label: zone.nursery.name }, { href: "/supervisor/zones", label: copy.supervisor.zonesTitle }, { label: zone.name }]} />
+      <PageHeader title={zone.name} description={copy.supervisor.zoneLead} />
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Healthy" value={summary.healthy} tone="healthy" />
-        <StatCard label="Attention" value={summary.attention} tone="attention" />
-        <StatCard label="Critical" value={summary.critical} tone="critical" />
-        <StatCard label="Health" value={`${summary.score}%`} />
+        <StatCard label={copy.supervisor.healthy} value={summary.healthy} tone="healthy" />
+        <StatCard label={copy.supervisor.attention} value={summary.attention} tone="attention" />
+        <StatCard label={copy.supervisor.critical} value={summary.critical} tone="critical" />
+        <StatCard label={copy.supervisor.score} value={`${summary.score}%`} />
       </section>
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {cells.map((cell) => (
@@ -48,15 +51,15 @@ export default async function SupervisorZoneDetailPage({
         ))}
       </div>
       <section className="mt-10">
-        <h2 className="text-xl font-semibold text-forest">Recent operations</h2>
+        <h2 className="text-xl font-semibold text-forest">{copy.hq.recentOps}</h2>
         <ul className="mt-4 space-y-3">
           {operations.map((op) => (
             <li key={op.id} className="rounded-3xl border border-sand bg-white px-5 py-4">
               <p className="font-semibold text-forest">
-                {op.type.replaceAll("_", " ")} · {op.plantCell?.code ?? zone.name}
+                {copy.operation[op.type]} · {op.plantCell?.code ?? zone.name}
               </p>
               <p className="text-sm text-muted">
-                {op.user.fullName} · {relativeTime(op.occurredAt)}
+                {op.user.fullName} · {relativeText(locale, op.occurredAt)}
               </p>
             </li>
           ))}

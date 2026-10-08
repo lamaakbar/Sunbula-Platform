@@ -46,7 +46,7 @@ export async function loginAction(
   }
 
   if (user.accountStatus !== "ACTIVE") {
-    return { error: "This account is not active. Please contact SUNBULA support." };
+    return { error: "This account is not active. Please contact Sunbulla support." };
   }
 
   await createSession({
