@@ -52,10 +52,14 @@ export function validateReading(
     return { qualityStatus: "STALE", reasons };
   }
 
-  if (options?.lastTimestamp) {
-    const delta = Math.abs(reading.timestamp.getTime() - options.lastTimestamp.getTime());
-    if (delta < 30_000 && reading.source === "SENSOR") {
+  if (options?.lastTimestamp && reading.source === "SENSOR") {
+    const delta = reading.timestamp.getTime() - options.lastTimestamp.getTime();
+    if (Math.abs(delta) < 30_000) {
       reasons.push("Possible duplicate sensor reading.");
+      return { qualityStatus: "WARNING", reasons };
+    }
+    if (delta < 0) {
+      reasons.push("Reading is older than the latest stored timestamp and will not replace it.");
       return { qualityStatus: "WARNING", reasons };
     }
   }

@@ -122,19 +122,29 @@ export async function logOperationAction(
         batchId: batch?.id,
         relatedEntityType: "DailyOperation",
         relatedEntityId: operation.id,
-        details: { cell: cell.code, amount, notes: parsed.data.notes },
+        details: {
+          cell: cell.code,
+          amount,
+          notes: parsed.data.notes,
+          note: "Irrigation was logged. Soil moisture was not changed, and the alert stays open until a later reading is in range.",
+        },
       });
     }
 
     if (taskId) {
-      await tx.task.update({
-        where: { id: taskId },
+      const completed = await tx.task.updateMany({
+        where: {
+          id: taskId,
+          assigneeId: user.id,
+          status: { in: ["PENDING", "IN_PROGRESS", "OVERDUE"] },
+        },
         data: {
           status: "COMPLETED",
           completedAt: new Date(),
-          startedAt: new Date(),
+          openKey: null,
         },
       });
+      if (completed.count !== 1) return;
       await recordEvent(tx, {
         eventType: "TASK_COMPLETED",
         userId: user.id,
@@ -150,6 +160,7 @@ export async function logOperationAction(
   });
 
   revalidatePath("/employee");
+  revalidatePath("/employee/alerts");
   revalidatePath("/employee/zone");
   revalidatePath(`/employee/zone/${cell.id}`);
   revalidatePath("/employee/tasks");

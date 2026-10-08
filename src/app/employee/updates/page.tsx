@@ -16,7 +16,7 @@ export default async function EmployeeUpdatesPage({
 }: {
   searchParams: Promise<{ tab?: string; q?: string; sort?: string; id?: string; saved?: string }>;
 }) {
-  const { user, zone } = await employeeContext();
+  const { user, zoneLabel, zoneIds } = await employeeContext();
   const params = await searchParams;
   const locale = await getLocale();
   const copy = workflowCopy(locale);
@@ -26,9 +26,9 @@ export default async function EmployeeUpdatesPage({
   const sort = params.sort === "oldest" || params.sort === "quantity" ? params.sort : "newest";
 
   const [records, batches] = await Promise.all([
-    listBatchUpdates({ submittedById: user.id, zoneId: zone.id }),
+    listBatchUpdates({ submittedById: user.id, zoneId: { in: zoneIds } }),
     prisma.seedlingBatch.findMany({
-      where: { zoneId: zone.id, isActive: true },
+      where: { zoneId: { in: zoneIds }, isActive: true },
       include: { species: true },
       orderBy: { code: "asc" },
     }),
@@ -55,7 +55,7 @@ export default async function EmployeeUpdatesPage({
   return (
     <div>
       <SavedToast value={params.saved} />
-      <PageHeader eyebrow={zone.name} title={copy.updatesTitle} description={copy.employeeLead} />
+      <PageHeader eyebrow={zoneLabel} title={copy.updatesTitle} description={copy.employeeLead} />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section>
           <StatusTabs base="/employee/updates" tab={tab} counts={counts} copy={copy} />

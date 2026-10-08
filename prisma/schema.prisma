@@ -491,6 +491,7 @@ model Alert {
   batchId     String?
   triggerMetric MetricType?
   triggerValue  Float?
+  openKey     String?       @unique
   createdAt   DateTime      @default(now())
   resolvedAt  DateTime?
 
@@ -539,6 +540,7 @@ model Task {
   assigneeId       String?
   recommendationId String?
   alertId          String?
+  openKey          String?      @unique
   startedAt        DateTime?
   completedAt      DateTime?
   createdAt        DateTime     @default(now())
@@ -665,6 +667,7 @@ model BatchUpdate {
   proposedStage    GrowthStage
   notes            String
   status           BatchUpdateStatus @default(PENDING)
+  openSlot         String?           @unique
   feedback         String?
   reviewedById     String?
   reviewedAt       DateTime?

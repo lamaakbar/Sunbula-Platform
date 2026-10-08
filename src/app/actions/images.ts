@@ -56,22 +56,23 @@ export async function uploadPlantImageAction(
   const classifier = getHealthClassifier();
   const result = await classifier.classify(filePath);
 
-  const image = await prisma.plantImage.create({
-    data: {
-      nurseryId: cell.nurseryId,
-      zoneId: cell.zoneId,
-      plantCellId: cell.id,
-      batchId: batch?.id,
-      speciesId: batch?.speciesId,
-      userId: user.id,
-      filePath,
-      notes: notes || null,
-      classificationLabel: result.status === "demo" ? result.label : null,
-      classificationIsDemo: result.status === "demo",
-    },
-  });
+  await prisma.$transaction(async (tx) => {
+    const image = await tx.plantImage.create({
+      data: {
+        nurseryId: cell.nurseryId,
+        zoneId: cell.zoneId,
+        plantCellId: cell.id,
+        batchId: batch?.id,
+        speciesId: batch?.speciesId,
+        userId: user.id,
+        filePath,
+        notes: notes || null,
+        classificationLabel: result.status === "demo" ? result.label : null,
+        classificationIsDemo: result.status === "demo",
+      },
+    });
 
-  await recordEvent(prisma, {
+    await recordEvent(tx, {
     eventType: "IMAGE_UPLOADED",
     userId: user.id,
     nurseryId: cell.nurseryId,
@@ -84,6 +85,7 @@ export async function uploadPlantImageAction(
       filePath,
       demoClassification: result.status === "demo" ? result.label : null,
     },
+    });
   });
 
   revalidatePath(`/employee/zone/${cell.id}`);

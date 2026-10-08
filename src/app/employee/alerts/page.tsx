@@ -7,10 +7,10 @@ import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 
 export default async function EmployeeAlertsPage() {
-  const { zone } = await employeeContext();
+  const { zoneLabel, zoneIds } = await employeeContext();
   const copy = messages(await getLocale());
   const alerts = await prisma.alert.findMany({
-    where: { zoneId: zone.id, status: { in: ["OPEN", "ACKNOWLEDGED"] } },
+    where: { zoneId: { in: zoneIds }, status: { in: ["OPEN", "ACKNOWLEDGED"] } },
     include: { plantCell: true, recommendations: true },
     orderBy: { createdAt: "desc" },
   });
@@ -18,7 +18,7 @@ export default async function EmployeeAlertsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow={zone.name}
+        eyebrow={zoneLabel}
         title={copy.employee.alertsTitle}
         description={copy.employee.alertsLead}
       />

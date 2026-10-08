@@ -23,10 +23,10 @@ export default async function EmployeeHomePage() {
           {greetingText(locale)}, {firstName}
         </h1>
         <p className="mt-2 max-w-xl text-muted">
-          {data.zone.name} · {copy.employee.attention}
+          {data.zoneLabel} · {copy.employee.attention}
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
-          <span className="rounded-full bg-light-sage px-3 py-1.5 text-sm font-medium text-forest">{data.zone.name}</span>
+          <span className="rounded-full bg-light-sage px-3 py-1.5 text-sm font-medium text-forest">{data.zoneLabel}</span>
           <span className="rounded-full bg-cream px-3 py-1.5 text-sm font-medium text-muted">
             {data.cells.length} {copy.employee.cells}
           </span>
@@ -76,7 +76,7 @@ export default async function EmployeeHomePage() {
       <section className="mt-10">
         <SectionHeading
           title={copy.employee.myZone}
-          description={`${data.zone.name} · ${data.cells.length} ${copy.employee.cells}`}
+          description={`${data.zoneLabel} · ${data.cells.length} ${copy.employee.cells}`}
           action={
             <Link href="/employee/zone" className="text-sm font-semibold text-forest">
               {copy.employee.openGrid}

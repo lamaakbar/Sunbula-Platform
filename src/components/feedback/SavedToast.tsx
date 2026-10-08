@@ -13,7 +13,7 @@ export function SavedToast({ value }: { value?: string }) {
     if (!value || !(value in toast)) return;
     const timer = window.setTimeout(() => setDismissed(value), 4200);
     return () => window.clearTimeout(timer);
-  }, [value]);
+  }, [toast, value]);
 
   if (!message || dismissed === value) return null;
 

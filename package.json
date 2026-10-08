@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/lib/integrity-keys.test.ts src/lib/auth/scope.test.ts src/services/data-quality/validate.test.ts src/services/sensors/payload.test.ts src/services/alerts/decision.test.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",

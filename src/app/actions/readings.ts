@@ -26,8 +26,13 @@ export async function addManualReadingAction(
     notes: formData.get("notes") || undefined,
   });
 
+  const values = {
+    metric: String(formData.get("metric") ?? ""),
+    value: String(formData.get("value") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
+  };
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Please check the reading." };
+    return { error: parsed.error.issues[0]?.message ?? "Please check the reading.", values };
   }
 
   const cell = await getAccessibleCell(user, parsed.data.cellId);
@@ -56,13 +61,10 @@ export async function addManualReadingAction(
   );
 
   if (quality.qualityStatus === "INVALID") {
-    return { error: quality.reasons[0] ?? "This reading could not be saved." };
+    return { error: quality.reasons[0] ?? "This reading could not be saved.", values };
   }
 
   const knowledge = batch ? await getKnowledge(batch.speciesId, batch.growthStage) : null;
-  const assignee = await prisma.employeeZoneAssignment.findFirst({
-    where: { zoneId: cell.zoneId },
-  });
 
   await prisma.$transaction(async (tx) => {
     const measurement = await tx.plantMeasurement.create({
@@ -100,20 +102,25 @@ export async function addManualReadingAction(
       },
     });
 
-    await evaluateReading(tx, {
-      nurseryId: cell.nurseryId,
-      zoneId: cell.zoneId,
-      plantCellId: cell.id,
-      batchId: batch?.id,
-      metric,
-      value: parsed.data.value,
-      knowledge,
-      assigneeId: assignee?.userId ?? user.id,
-      userId: user.id,
-    });
+    if (quality.qualityStatus === "VALID") {
+      await evaluateReading(tx, {
+        nurseryId: cell.nurseryId,
+        zoneId: cell.zoneId,
+        plantCellId: cell.id,
+        batchId: batch?.id,
+        metric,
+        value: parsed.data.value,
+        knowledge,
+        assigneeId: user.id,
+        userId: user.id,
+        qualityStatus: quality.qualityStatus,
+      });
+    }
   });
 
   revalidatePath("/employee");
+  revalidatePath("/employee/alerts");
+  revalidatePath("/employee/tasks");
   revalidatePath("/employee/zone");
   revalidatePath(`/employee/zone/${cell.id}`);
   revalidatePath("/employee/monitoring");

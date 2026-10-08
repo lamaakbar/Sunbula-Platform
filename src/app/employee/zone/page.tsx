@@ -14,7 +14,7 @@ export default async function MyZonePage() {
     <div>
       <PageHeader
         eyebrow={data.nurseryName}
-        title={data.zone.name}
+        title={data.zoneLabel}
         description={copy.employee.zoneLead}
         actions={
           <Link href="/employee/add">

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, LogOut, Menu, UserRound, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { logoutAction } from "@/app/actions/auth";
 import { setLocaleAction } from "@/app/actions/locale";
 import { BrandMark } from "@/components/brand/BrandMark";
@@ -13,6 +13,14 @@ import { navigationFor, type NavItem } from "@/lib/nav";
 import { messages } from "@/lib/i18n";
 import { navLabel } from "@/lib/workflow-copy";
 import type { Role } from "@prisma/client";
+
+function useHydrated() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
 
 export type ShellUser = {
   fullName: string;
@@ -68,7 +76,7 @@ function NavLink({
 
 export function ShellChrome({ user, locale }: { user: ShellUser; locale: Locale }) {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const nav = navigationFor(user.role);
@@ -79,10 +87,6 @@ export function ShellChrome({ user, locale }: { user: ShellUser; locale: Locale 
     .join("")
     .slice(0, 2);
   const copy = messages(locale);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -230,12 +234,8 @@ export function ShellChrome({ user, locale }: { user: ShellUser; locale: Locale 
 
 export function BottomNav({ user, locale }: { user: ShellUser; locale: Locale }) {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const items = navigationFor(user.role).primary.filter((item) => item.mobile).slice(0, 5);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) {
     return (

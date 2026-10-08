@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { AppUser } from "@/lib/auth/current-user";
+import { canAccessNursery, canAccessZone } from "@/lib/auth/scope";
 import { prisma } from "@/lib/prisma";
 
 export class ForbiddenError extends Error {
@@ -10,17 +11,11 @@ export class ForbiddenError extends Error {
 }
 
 export function assertNurseryScope(user: AppUser, nurseryId: string) {
-  if (user.role === "HQ") return;
-  if (!user.nurseryId || user.nurseryId !== nurseryId) {
-    throw new ForbiddenError();
-  }
+  if (!canAccessNursery(user, nurseryId)) throw new ForbiddenError();
 }
 
 export function assertZoneScope(user: AppUser, zoneId: string, zoneNurseryId: string) {
-  assertNurseryScope(user, zoneNurseryId);
-  if (user.role === "EMPLOYEE" && !user.assignedZoneIds.includes(zoneId)) {
-    throw new ForbiddenError();
-  }
+  if (!canAccessZone(user, zoneId, zoneNurseryId)) throw new ForbiddenError();
 }
 
 export async function getAccessibleZone(user: AppUser, zoneId: string) {

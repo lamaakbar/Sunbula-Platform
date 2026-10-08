@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { supervisorContext } from "@/lib/data/supervisor";
 import { prisma } from "@/lib/prisma";
+import { EventTimeline } from "@/components/data/EventTimeline";
 import { Breadcrumbs, PageHeader } from "@/components/ui/Feedback";
 import { AssignTaskForm } from "@/components/forms/AssignTaskForm";
 import { SavedToast } from "@/components/feedback/SavedToast";
@@ -30,7 +31,15 @@ export default async function EmployeeActivityPage({
   });
   if (!employee) notFound();
 
-  const zones = await prisma.zone.findMany({ where: { nurseryId }, orderBy: { code: "asc" } });
+  const [zones, events] = await Promise.all([
+    prisma.zone.findMany({ where: { nurseryId }, orderBy: { code: "asc" } }),
+    prisma.eventHistory.findMany({
+      where: { nurseryId, userId: employee.id },
+      include: { plantCell: true, user: true },
+      orderBy: { timestamp: "desc" },
+      take: 20,
+    }),
+  ]);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
@@ -39,7 +48,7 @@ export default async function EmployeeActivityPage({
         <Breadcrumbs items={[{ href: "/supervisor/employees", label: copy.supervisor.teamTitle }, { label: employee.fullName }]} />
         <PageHeader
           title={employee.fullName}
-          description={`Assigned: ${employee.zoneAssignments.map((item) => item.zone.name).join(", ") || "None"}`}
+          description={`${copy.forms.zone}: ${employee.zoneAssignments.map((item) => item.zone.name).join(" · ") || copy.common.none}`}
         />
         <section>
           <h2 className="text-xl font-semibold text-forest">{copy.employee.tasksTitle}</h2>
@@ -59,11 +68,21 @@ export default async function EmployeeActivityPage({
           <ul className="mt-3 space-y-3">
             {employee.operations.map((op) => (
               <li key={op.id} className="rounded-3xl border border-sand bg-white p-4">
-                <p className="font-semibold">{op.type.replaceAll("_", " ")} · {op.plantCell?.code}</p>
+                <p className="font-semibold">{copy.operation[op.type]} · {op.plantCell?.code}</p>
                 <p className="text-sm text-muted">{formatDateTime(op.occurredAt)} · {relativeText(locale, op.occurredAt)}</p>
               </li>
             ))}
           </ul>
+        </section>
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold text-forest">{copy.employee.historyTitle}</h2>
+          <div className="mt-3">
+            {events.length === 0 ? (
+              <p className="text-sm text-muted">{copy.employee.noActivity}</p>
+            ) : (
+              <EventTimeline locale={locale} events={events} />
+            )}
+          </div>
         </section>
       </div>
       <AssignTaskForm

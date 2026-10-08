@@ -1,17 +1,17 @@
 import { employeeContext } from "@/lib/data/employee";
 import { prisma } from "@/lib/prisma";
+import { EventTimeline } from "@/components/data/EventTimeline";
 import { EmptyState, PageHeader } from "@/components/ui/Feedback";
-import { formatDateTime } from "@/lib/format";
 import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
-import { parseEventDetails } from "@/services/events";
 
 export default async function HistoryPage() {
-  const { user, zone } = await employeeContext();
-  const copy = messages(await getLocale());
+  const { user, zoneIds } = await employeeContext();
+  const locale = await getLocale();
+  const copy = messages(locale);
   const events = await prisma.eventHistory.findMany({
     where: {
-      OR: [{ userId: user.id }, { zoneId: zone.id }],
+      OR: [{ userId: user.id }, { zoneId: { in: zoneIds } }],
     },
     include: { plantCell: true, user: true },
     orderBy: { timestamp: "desc" },
@@ -24,26 +24,7 @@ export default async function HistoryPage() {
       {events.length === 0 ? (
         <EmptyState title={copy.employee.noActivity} description={copy.employee.noActivityBody} />
       ) : (
-        <ol className="space-y-3">
-          {events.map((event) => (
-            <li key={event.id} className="rounded-3xl border border-sand bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-leaf">
-                {event.eventType.replaceAll("_", " ")}
-              </p>
-              <p className="mt-1 text-sm text-muted">
-                {formatDateTime(event.timestamp)}
-                {event.plantCell ? ` · ${event.plantCell.code}` : ""}
-                {event.user ? ` · ${event.user.fullName}` : ""}
-              </p>
-              <p className="mt-2 text-sm">
-                {Object.entries(parseEventDetails(event.details))
-                  .filter(([, value]) => typeof value !== "object")
-                  .map(([key, value]) => `${key}: ${String(value)}`)
-                  .join(" · ")}
-              </p>
-            </li>
-          ))}
-        </ol>
+        <EventTimeline locale={locale} events={events} />
       )}
     </div>
   );

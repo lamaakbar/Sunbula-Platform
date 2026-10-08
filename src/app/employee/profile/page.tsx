@@ -7,7 +7,7 @@ import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 
 export default async function ProfilePage() {
-  const { user, zone, nurseryName } = await employeeContext();
+  const { user, zoneLabel, nurseryName } = await employeeContext();
   const copy = messages(await getLocale());
   return (
     <div className="max-w-xl">
@@ -26,7 +26,7 @@ export default async function ProfilePage() {
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-muted">{copy.forms.zone}</dt>
-            <dd>{zone.name}</dd>
+            <dd>{zoneLabel}</dd>
           </div>
         </dl>
         <form action={logoutAction} className="mt-6">

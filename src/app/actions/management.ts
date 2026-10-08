@@ -85,28 +85,30 @@ export async function submitRequestAction(
     where: { nurseryId: user.nurseryId, speciesId: parsed.data.speciesId, state: "READY" },
   });
 
-  const request = await prisma.seedlingRequest.create({
-    data: {
-      nurseryId: user.nurseryId,
-      speciesId: parsed.data.speciesId,
-      quantity: parsed.data.quantity,
-      requiredDate: new Date(parsed.data.requiredDate),
-      currentStock: ready?.quantity ?? 0,
-      reason: parsed.data.reason,
-      purpose: parsed.data.purpose || null,
-      priority: parsed.data.priority,
-      notes: parsed.data.notes || null,
-      submittedById: user.id,
-    },
-  });
+  await prisma.$transaction(async (tx) => {
+    const request = await tx.seedlingRequest.create({
+      data: {
+        nurseryId: user.nurseryId!,
+        speciesId: parsed.data.speciesId,
+        quantity: parsed.data.quantity,
+        requiredDate: new Date(parsed.data.requiredDate),
+        currentStock: ready?.quantity ?? 0,
+        reason: parsed.data.reason,
+        purpose: parsed.data.purpose || null,
+        priority: parsed.data.priority,
+        notes: parsed.data.notes || null,
+        submittedById: user.id,
+      },
+    });
 
-  await recordEvent(prisma, {
+    await recordEvent(tx, {
     eventType: "REQUEST_SUBMITTED",
     userId: user.id,
     nurseryId: user.nurseryId,
     relatedEntityType: "SeedlingRequest",
     relatedEntityId: request.id,
     details: { quantity: parsed.data.quantity, speciesId: parsed.data.speciesId },
+    });
   });
 
   revalidatePath("/supervisor/requests");
@@ -126,14 +128,9 @@ export async function reviewRequestAction(
   });
   if (!parsed.success) return { error: "Unable to update this request." };
 
-  const request = await prisma.seedlingRequest.update({
-    where: { id: parsed.data.requestId },
-    data: {
-      status: parsed.data.status,
-      reviewNotes: parsed.data.reviewNotes || null,
-      reviewedById: user.id,
-    },
-  });
+  const existing = await prisma.seedlingRequest.findUnique({ where: { id: parsed.data.requestId } });
+  if (!existing) return { error: "This request was not found." };
+  if (existing.status === "COMPLETED") return { error: "This request is already completed." };
 
   const eventType =
     parsed.data.status === "APPROVED"
@@ -142,18 +139,31 @@ export async function reviewRequestAction(
         ? "REQUEST_REJECTED"
         : "REQUEST_UNDER_REVIEW";
 
-  await recordEvent(prisma, {
-    eventType,
-    userId: user.id,
-    nurseryId: request.nurseryId,
-    relatedEntityType: "SeedlingRequest",
-    relatedEntityId: request.id,
-    details: { status: parsed.data.status, notes: parsed.data.reviewNotes },
+  const claimed = await prisma.$transaction(async (tx) => {
+    const updated = await tx.seedlingRequest.updateMany({
+      where: { id: existing.id, status: existing.status },
+      data: {
+        status: parsed.data.status,
+        reviewNotes: parsed.data.reviewNotes || null,
+        reviewedById: user.id,
+      },
+    });
+    if (updated.count !== 1) return false;
+    await recordEvent(tx, {
+      eventType,
+      userId: user.id,
+      nurseryId: existing.nurseryId,
+      relatedEntityType: "SeedlingRequest",
+      relatedEntityId: existing.id,
+      details: { status: parsed.data.status, notes: parsed.data.reviewNotes },
+    });
+    return true;
   });
+  if (!claimed) return { error: "This request changed before the decision was saved." };
 
   revalidatePath("/hq/requests");
   revalidatePath("/supervisor/requests");
-  redirect(`/hq/requests?saved=review&id=${request.id}`);
+  redirect(`/hq/requests?saved=review&id=${existing.id}`);
 }
 
 export async function createProductionTargetAction(
@@ -172,6 +182,17 @@ export async function createProductionTargetAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please complete the target." };
   }
+
+  const nursery = await prisma.nursery.findUnique({ where: { id: parsed.data.nurseryId } });
+  if (!nursery) return { error: "Nursery was not found." };
+  if (parsed.data.zoneId) {
+    const zone = await prisma.zone.findFirst({
+      where: { id: parsed.data.zoneId, nurseryId: nursery.id },
+    });
+    if (!zone) return { error: "That zone is not in the selected nursery." };
+  }
+  const species = await prisma.species.findUnique({ where: { id: parsed.data.speciesId } });
+  if (!species) return { error: "Species was not found." };
 
   await prisma.productionTarget.create({
     data: {

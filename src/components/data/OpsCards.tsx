@@ -135,6 +135,7 @@ export async function ReadingCard({
   meaning,
   expected,
   source,
+  quality,
   updated,
   href,
 }: {
@@ -144,6 +145,7 @@ export async function ReadingCard({
   meaning: string;
   expected?: string;
   source: string;
+  quality?: string;
   updated: string;
   href?: string;
 }) {
@@ -172,13 +174,16 @@ export async function ReadingCard({
       >
         {meaning}
       </p>
+      {quality ? (
+        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted">{quality}</p>
+      ) : null}
       {expected ? <p className="mt-2 text-sm text-muted">{copy.employee.expected}: {expected}</p> : null}
       <p className="mt-4 text-xs text-muted">
         {source} · {updated}
       </p>
       {href ? (
         <Link href={href} className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-forest">
-          View recommendation
+          {copy.common.review}
         </Link>
       ) : null}
     </article>

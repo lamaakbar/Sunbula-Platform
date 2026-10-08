@@ -97,7 +97,7 @@ export function OperationForm({
       {state.error ? <p className="text-sm text-critical">{state.error}</p> : null}
 
       <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={pending}>
-        {pending ? copy.welcome.signingIn : copy.operation[type]}
+        {pending ? copy.forms.saving : copy.operation[type]}
       </Button>
     </form>
   );

@@ -77,6 +77,7 @@ export default async function CellDetailPage({
             meaning={meaning}
             expected={range ? `${range.min}–${range.max}%` : undefined}
             source={`${copy.source[moisture.source]}${moisture.recordedBy ? ` · ${moisture.recordedBy.fullName}` : ""}`}
+            quality={copy.quality[moisture.qualityStatus]}
             updated={relativeText(locale, moisture.timestamp)}
           />
           {rec && meaning !== "NORMAL" ? (

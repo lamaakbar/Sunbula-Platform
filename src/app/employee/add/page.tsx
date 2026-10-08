@@ -6,11 +6,11 @@ import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 
 export default async function AddPlantPage() {
-  const { zone, nurseryName } = await employeeContext();
+  const { zoneLabel, zoneIds, nurseryName } = await employeeContext();
   const copy = messages(await getLocale());
   const [species, cells] = await Promise.all([
     prisma.species.findMany({ orderBy: { commonName: "asc" } }),
-    prisma.plantCell.findMany({ where: { zoneId: zone.id }, orderBy: { code: "asc" } }),
+    prisma.plantCell.findMany({ where: { zoneId: { in: zoneIds } }, orderBy: { code: "asc" } }),
   ]);
 
   return (
@@ -18,7 +18,7 @@ export default async function AddPlantPage() {
       <PageHeader title={copy.employee.addTitle} description={copy.employee.addLead} />
       <AddPlantWizard
         nurseryName={nurseryName}
-        zoneName={zone.name}
+        zoneName={zoneLabel}
         species={species.map((item) => ({ id: item.id, commonName: item.commonName }))}
         cells={cells.map((cell) => ({ id: cell.id, code: cell.code }))}
       />

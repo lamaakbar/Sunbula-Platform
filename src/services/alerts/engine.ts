@@ -1,4 +1,6 @@
-import type { Prisma, AlertType, MetricType, TaskType } from "@prisma/client";
+import type { Prisma, AlertType, MetricType, QualityStatus, TaskType } from "@prisma/client";
+import { alertOpenKey, isUniqueConstraintError, taskOpenKey } from "@/lib/integrity-keys";
+import { alertEffect } from "@/services/alerts/decision";
 import { readingMeaning } from "@/services/data-quality";
 import { rangeForMetric, recommendationFor, type KnowledgeContext } from "@/services/recommendations";
 import { recordEvent } from "@/services/events";
@@ -15,6 +17,7 @@ type EvaluateInput = {
   knowledge: KnowledgeContext | null;
   assigneeId?: string | null;
   userId?: string | null;
+  qualityStatus?: QualityStatus;
 };
 
 function taskTypeFor(metric: MetricType, meaning: "LOW" | "HIGH"): TaskType {
@@ -33,8 +36,13 @@ function alertTypeFor(metric: MetricType, meaning: "LOW" | "HIGH"): AlertType {
 export async function evaluateReading(db: Db, input: EvaluateInput) {
   const range = rangeForMetric(input.knowledge, input.metric);
   const meaning = readingMeaning(input.value, range);
+  const effect = alertEffect({
+    quality: input.qualityStatus ?? "VALID",
+    meaning,
+    hasCell: Boolean(input.plantCellId),
+  });
 
-  if (!input.plantCellId || meaning === "UNKNOWN") {
+  if (effect === "ignore" || !input.plantCellId) {
     return { meaning, alertId: null as string | null };
   }
 
@@ -48,10 +56,11 @@ export async function evaluateReading(db: Db, input: EvaluateInput) {
     });
 
     for (const alert of open) {
-      await db.alert.update({
-        where: { id: alert.id },
-        data: { status: "RESOLVED", resolvedAt: new Date() },
+      const resolved = await db.alert.updateMany({
+        where: { id: alert.id, status: { in: ["OPEN", "ACKNOWLEDGED"] } },
+        data: { status: "RESOLVED", resolvedAt: new Date(), openKey: null },
       });
+      if (resolved.count !== 1) continue;
       await recordEvent(db, {
         eventType: "ALERT_RESOLVED",
         userId: input.userId,
@@ -81,6 +90,10 @@ export async function evaluateReading(db: Db, input: EvaluateInput) {
     return { meaning, alertId: null as string | null };
   }
 
+  if (meaning !== "LOW" && meaning !== "HIGH") {
+    return { meaning, alertId: null as string | null };
+  }
+
   const type = alertTypeFor(input.metric, meaning);
   const existing = await db.alert.findFirst({
     where: {
@@ -99,20 +112,37 @@ export async function evaluateReading(db: Db, input: EvaluateInput) {
   let alertId = existing?.id ?? null;
 
   if (!existing) {
-    const alert = await db.alert.create({
-      data: {
-        type,
-        severity: meaning === "LOW" && input.metric === "SOIL_MOISTURE" ? "HIGH" : "MEDIUM",
-        title,
-        message: `${title}. Current reading ${input.value}. Expected ${range ? `${range.min}–${range.max}` : "range unavailable"}.`,
-        nurseryId: input.nurseryId,
-        zoneId: input.zoneId,
-        plantCellId: input.plantCellId,
-        batchId: input.batchId,
-        triggerMetric: input.metric,
-        triggerValue: input.value,
-      },
-    });
+    let alert: { id: string } | null = null;
+    try {
+      alert = await db.alert.create({
+        data: {
+          type,
+          severity: meaning === "LOW" && input.metric === "SOIL_MOISTURE" ? "HIGH" : "MEDIUM",
+          title,
+          message: `${title}. Current reading ${input.value}. Expected ${range ? `${range.min}–${range.max}` : "range unavailable"}.`,
+          nurseryId: input.nurseryId,
+          zoneId: input.zoneId,
+          plantCellId: input.plantCellId,
+          batchId: input.batchId,
+          triggerMetric: input.metric,
+          triggerValue: input.value,
+          openKey: alertOpenKey(input.plantCellId, type),
+        },
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+      const winner = await db.alert.findFirst({
+        where: { openKey: alertOpenKey(input.plantCellId, type) },
+      });
+      if (winner) {
+        await db.alert.update({
+          where: { id: winner.id },
+          data: { triggerValue: input.value },
+        });
+        return { meaning, alertId: winner.id };
+      }
+    }
+    if (!alert) return { meaning, alertId: null as string | null };
     alertId = alert.id;
 
     await recordEvent(db, {
@@ -162,25 +192,28 @@ export async function evaluateReading(db: Db, input: EvaluateInput) {
     if (!openTask) {
       const due = new Date();
       due.setHours(due.getHours() + 3);
-      const task = await db.task.create({
-        data: {
-          type: taskTypeFor(input.metric, meaning),
-          title: rec.title,
-          description: rec.message,
-          status: "PENDING",
-          priority: input.metric === "SOIL_MOISTURE" && meaning === "LOW" ? "URGENT" : "HIGH",
-          dueAt: due,
-          nurseryId: input.nurseryId,
-          zoneId: input.zoneId,
-          plantCellId: input.plantCellId,
-          batchId: input.batchId,
-          assigneeId: input.assigneeId,
-          recommendationId: recommendation.id,
-          alertId: alert.id,
-        },
-      });
+      const taskType = taskTypeFor(input.metric, meaning);
+      try {
+        const task = await db.task.create({
+          data: {
+            type: taskType,
+            title: rec.title,
+            description: rec.message,
+            status: "PENDING",
+            priority: input.metric === "SOIL_MOISTURE" && meaning === "LOW" ? "URGENT" : "HIGH",
+            dueAt: due,
+            nurseryId: input.nurseryId,
+            zoneId: input.zoneId,
+            plantCellId: input.plantCellId,
+            batchId: input.batchId,
+            assigneeId: input.assigneeId,
+            recommendationId: recommendation.id,
+            alertId: alert.id,
+            openKey: taskOpenKey(input.plantCellId, taskType),
+          },
+        });
 
-      await recordEvent(db, {
+        await recordEvent(db, {
         eventType: "TASK_ASSIGNED",
         userId: input.userId,
         nurseryId: input.nurseryId,
@@ -190,7 +223,10 @@ export async function evaluateReading(db: Db, input: EvaluateInput) {
         relatedEntityType: "Task",
         relatedEntityId: task.id,
         details: { title: task.title, assigneeId: input.assigneeId },
-      });
+        });
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) throw error;
+      }
     }
   } else {
     await db.alert.update({

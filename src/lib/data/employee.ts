@@ -1,19 +1,28 @@
 import { requireRole } from "@/lib/auth/current-user";
-import { employeePrimaryZone } from "@/lib/auth/rbac";
 import { getZoneCells, zoneHealthSummary } from "@/lib/data/cells";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
 export async function employeeContext() {
   const user = await requireRole("EMPLOYEE");
-  const zone = employeePrimaryZone(user);
+  const zones = user.assignedZones;
+  const zone = zones[0] ?? null;
   if (!user.nurseryId || !zone) notFound();
-  return { user, zone, nurseryId: user.nurseryId, nurseryName: user.nurseryName ?? "Nursery" };
+  return {
+    user,
+    zone,
+    zones,
+    zoneIds: zones.map((item) => item.id),
+    zoneLabel: zones.map((item) => item.name).join(" · "),
+    nurseryId: user.nurseryId,
+    nurseryName: user.nurseryName ?? "Nursery",
+  };
 }
 
 export async function getEmployeeHome() {
   const ctx = await employeeContext();
-  const cells = await getZoneCells(ctx.zone.id);
+  const grouped = await Promise.all(ctx.zoneIds.map((zoneId) => getZoneCells(zoneId)));
+  const cells = grouped.flat();
   const summary = zoneHealthSummary(cells);
 
   const [tasks, alerts, operationsToday, moisture, updates] = await Promise.all([
@@ -26,21 +35,21 @@ export async function getEmployeeHome() {
       orderBy: [{ priority: "desc" }, { dueAt: "asc" }],
     }),
     prisma.alert.count({
-      where: { zoneId: ctx.zone.id, status: { in: ["OPEN", "ACKNOWLEDGED"] } },
+      where: { zoneId: { in: ctx.zoneIds }, status: { in: ["OPEN", "ACKNOWLEDGED"] } },
     }),
     prisma.dailyOperation.count({
       where: {
-        zoneId: ctx.zone.id,
+        zoneId: { in: ctx.zoneIds },
         occurredAt: { gte: startOfDay() },
       },
     }),
     prisma.plantMeasurement.findMany({
-      where: { zoneId: ctx.zone.id, metric: "SOIL_MOISTURE" },
+      where: { zoneId: { in: ctx.zoneIds }, metric: "SOIL_MOISTURE", qualityStatus: "VALID" },
       orderBy: { timestamp: "desc" },
       take: 80,
     }),
     prisma.batchUpdate.findMany({
-      where: { submittedById: ctx.user.id, zoneId: ctx.zone.id },
+      where: { submittedById: ctx.user.id, zoneId: { in: ctx.zoneIds } },
       select: { status: true },
     }),
   ]);

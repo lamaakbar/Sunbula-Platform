@@ -1,7 +1,20 @@
-import type { HealthStatus, Prisma } from "@prisma/client";
+import type { HealthStatus, Prisma, QualityStatus } from "@prisma/client";
 import { deriveHealth } from "@/lib/domain/health";
 import { getKnowledge } from "@/lib/domain/knowledge";
 import { prisma } from "@/lib/prisma";
+
+function isUsableQuality(status: QualityStatus) {
+  return status === "VALID" || status === "STALE";
+}
+
+function currentMetricReading<T extends { metric: string; qualityStatus: QualityStatus }>(readings: T[], metric: string) {
+  const matches = readings.filter((item) => item.metric === metric);
+  return matches.find((item) => isUsableQuality(item.qualityStatus)) ?? matches[0] ?? null;
+}
+
+function preferReading(candidate: { qualityStatus: QualityStatus }, current: { qualityStatus: QualityStatus }) {
+  return !isUsableQuality(current.qualityStatus) && isUsableQuality(candidate.qualityStatus);
+}
 
 export async function getZoneCells(zoneId: string) {
   const cells = await prisma.plantCell.findMany({
@@ -27,7 +40,7 @@ export async function getZoneCells(zoneId: string) {
   return Promise.all(
     cells.map(async (cell) => {
       const batch = cell.batches[0] ?? null;
-      const moisture = cell.measurements.find((item) => item.metric === "SOIL_MOISTURE") ?? null;
+      const moisture = currentMetricReading(cell.measurements, "SOIL_MOISTURE");
       const knowledge = batch ? await getKnowledge(batch.speciesId, batch.growthStage) : null;
       const health = deriveHealth({
         lastReadingAt: moisture?.timestamp ?? cell.measurements[0]?.timestamp,
@@ -94,7 +107,8 @@ export async function getCellDetail(cellId: string) {
   const knowledge = batch ? await getKnowledge(batch.speciesId, batch.growthStage) : null;
   const latestByMetric = new Map<string, (typeof cell.measurements)[number]>();
   for (const reading of cell.measurements) {
-    if (!latestByMetric.has(reading.metric)) {
+    const current = latestByMetric.get(reading.metric);
+    if (!current || preferReading(reading, current)) {
       latestByMetric.set(reading.metric, reading);
     }
   }

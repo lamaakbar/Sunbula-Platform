@@ -10,7 +10,7 @@ import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 
 export default async function TasksPage() {
-  const { user, zone } = await employeeContext();
+  const { user, zoneLabel } = await employeeContext();
   const locale = await getLocale();
   const copy = messages(locale);
   const tasks = await prisma.task.findMany({
@@ -26,7 +26,7 @@ export default async function TasksPage() {
     <div>
       <SavedToast />
       <PageHeader
-        eyebrow={zone.name}
+        eyebrow={zoneLabel}
         title={copy.employee.tasksTitle}
         description={copy.employee.tasksLead}
       />

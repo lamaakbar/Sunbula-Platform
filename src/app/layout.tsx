@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, Manrope } from "next/font/google";
+import { CursorHydrationGuard } from "@/components/dev/cursor-hydration-script";
+import { ReleaseCursorHydrationGuard } from "@/components/dev/ReleaseCursorHydrationGuard";
 import { getLocale } from "@/lib/locale";
 import "./globals.css";
 
@@ -38,7 +40,10 @@ export default async function RootLayout({
       className={`${manrope.variable} ${ibmArabic.variable} h-full antialiased`}
     >
       <body className={locale === "ar" ? "min-h-full bg-cream font-arabic text-ink" : "min-h-full bg-cream font-sans text-ink"}>
+        <CursorHydrationGuard position="start" />
         {children}
+        <CursorHydrationGuard position="end" />
+        <ReleaseCursorHydrationGuard />
       </body>
     </html>
   );

@@ -10,11 +10,11 @@ import { readingMeaning } from "@/services/data-quality";
 import { rangeForMetric } from "@/services/recommendations";
 
 export default async function MonitoringPage() {
-  const { zone } = await employeeContext();
+  const { zoneLabel, zoneIds } = await employeeContext();
   const locale = await getLocale();
   const copy = messages(locale);
   const readings = await prisma.plantMeasurement.findMany({
-    where: { zoneId: zone.id },
+    where: { zoneId: { in: zoneIds } },
     include: { plantCell: true, recordedBy: true, batch: { include: { species: true } } },
     orderBy: { timestamp: "desc" },
     take: 24,
@@ -45,12 +45,13 @@ export default async function MonitoringPage() {
               return (
                 <ReadingCard
                   key={reading.id}
-                  label={`${copy.metric[reading.metric]} · ${reading.plantCell?.code ?? zone.name}`}
+                  label={`${copy.metric[reading.metric]} · ${reading.plantCell?.code ?? zoneLabel}`}
                   value={String(reading.value)}
                   unit={reading.unit}
                   meaning={meaning}
                   expected={range ? `${range.min}–${range.max}` : undefined}
                   source={`${copy.source[reading.source]}${reading.recordedBy ? ` · ${reading.recordedBy.fullName}` : ""}`}
+                  quality={copy.quality[reading.qualityStatus]}
                   updated={relativeText(locale, reading.timestamp)}
                   href={reading.plantCellId ? `/employee/zone/${reading.plantCellId}` : undefined}
                 />

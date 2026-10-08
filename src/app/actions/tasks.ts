@@ -17,10 +17,11 @@ export async function startTaskAction(taskId: string) {
 
   if (task.status === "PENDING" || task.status === "OVERDUE") {
     await prisma.$transaction(async (tx) => {
-      await tx.task.update({
-        where: { id: task.id },
+      const started = await tx.task.updateMany({
+        where: { id: task.id, assigneeId: user.id, status: { in: ["PENDING", "OVERDUE"] } },
         data: { status: "IN_PROGRESS", startedAt: new Date() },
       });
+      if (started.count !== 1) return;
       await recordEvent(tx, {
         eventType: "TASK_STARTED",
         userId: user.id,
@@ -89,22 +90,23 @@ export async function assignTaskAction(
       return { error: "The selected cell must belong to the selected zone." };
     }
   }
-  const task = await prisma.task.create({
-    data: {
-      type: "GENERAL",
-      title: parsed.data.title,
-      description: parsed.data.description,
-      status: "PENDING",
-      priority: parsed.data.priority,
-      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
-      nurseryId: user.nurseryId,
-      zoneId: parsed.data.zoneId || null,
-      plantCellId: parsed.data.cellId || null,
-      assigneeId: assignee.id,
-    },
-  });
+  await prisma.$transaction(async (tx) => {
+    const task = await tx.task.create({
+      data: {
+        type: "GENERAL",
+        title: parsed.data.title,
+        description: parsed.data.description,
+        status: "PENDING",
+        priority: parsed.data.priority,
+        dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
+        nurseryId: user.nurseryId!,
+        zoneId: parsed.data.zoneId || null,
+        plantCellId: parsed.data.cellId || null,
+        assigneeId: assignee.id,
+      },
+    });
 
-  await recordEvent(prisma, {
+    await recordEvent(tx, {
     eventType: "TASK_ASSIGNED",
     userId: user.id,
     nurseryId: user.nurseryId,
@@ -113,6 +115,7 @@ export async function assignTaskAction(
     relatedEntityType: "Task",
     relatedEntityId: task.id,
     details: { title: task.title, assignee: assignee.fullName },
+    });
   });
 
   revalidatePath("/supervisor/employees");
