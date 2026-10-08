@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { validateReading } from "@/services/data-quality";
 import { evaluateReading } from "@/services/alerts/engine";
 import { recordEvent } from "@/services/events";
-import { getKnowledge } from "@/lib/domain/knowledge";
 import type { MetricType } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
@@ -45,12 +44,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, quality }, { status: 422 });
   }
 
-  const cell = await prisma.plantCell.findFirst({
-    where: { zoneId: sensor.zoneId },
-    include: { batches: { where: { isActive: true }, take: 1 } },
-  });
-  const batch = cell?.batches[0];
-  const knowledge = batch ? await getKnowledge(batch.speciesId, batch.growthStage) : null;
+  // Zone-level sensors must not be attributed to an arbitrary cell or batch.
+  const cell = null;
+  const batch = null;
+  const knowledge = null;
   const assignee = await prisma.employeeZoneAssignment.findFirst({ where: { zoneId: sensor.zoneId } });
 
   await prisma.$transaction(async (tx) => {
