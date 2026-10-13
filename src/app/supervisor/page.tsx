@@ -8,6 +8,8 @@ import { ZoneCard } from "@/components/data/Cards";
 import { AlertCard } from "@/components/data/OpsCards";
 import { BotanicalMark, SectionHeading } from "@/components/brand/BotanicalMark";
 import { NetworkMap } from "@/components/ground/NetworkMap";
+import { WeatherStrip } from "@/components/ground/WeatherStrip";
+import { getNurseryWeather } from "@/lib/weather/open-meteo";
 import { getNetworkOverview } from "@/lib/data/hq";
 import { weeklyInspections } from "@/lib/data/inspections";
 import { groundCopy } from "@/lib/ground-copy";
@@ -21,6 +23,7 @@ export default async function SupervisorHomePage() {
   const firstName = data.user.fullName.split(" ")[0];
   const network = await getNetworkOverview();
   const week = await weeklyInspections(data.nurseryId);
+  const weather = await getNurseryWeather(data.nurseryId, locale);
 
   return (
     <div>
@@ -32,6 +35,14 @@ export default async function SupervisorHomePage() {
         </h1>
         <p className="mt-2 max-w-xl text-muted">{copy.supervisor.lead}</p>
       </section>
+
+      <WeatherStrip
+        title={ground.weatherTitle}
+        lead={ground.weatherLead}
+        reports={weather ? [weather] : []}
+        copy={ground}
+        names={{ [data.nurseryId]: data.nurseryName }}
+      />
 
       <section className="mb-8 rounded-[2rem] bg-white p-4 ring-1 ring-sand sm:p-6">
         <h2 className="text-lg font-semibold text-forest">{ground.networkTitle}</h2>

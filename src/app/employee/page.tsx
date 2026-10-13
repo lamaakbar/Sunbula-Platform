@@ -8,6 +8,8 @@ import { PlantCellCard } from "@/components/data/Cards";
 import { BotanicalMark, SectionHeading } from "@/components/brand/BotanicalMark";
 import { Button } from "@/components/ui/Button";
 import { NetworkMap } from "@/components/ground/NetworkMap";
+import { WeatherStrip } from "@/components/ground/WeatherStrip";
+import { getNurseryWeather } from "@/lib/weather/open-meteo";
 import { getNetworkOverview } from "@/lib/data/hq";
 import { groundCopy } from "@/lib/ground-copy";
 import { numberFmt } from "@/lib/format";
@@ -19,6 +21,7 @@ export default async function EmployeeHomePage() {
   const ground = groundCopy(locale);
   const firstName = data.user.fullName.split(" ")[0];
   const network = await getNetworkOverview();
+  const weather = await getNurseryWeather(data.nurseryId, locale);
 
   return (
     <div>
@@ -46,6 +49,14 @@ export default async function EmployeeHomePage() {
           </Link>
         </div>
       </section>
+
+      <WeatherStrip
+        title={ground.weatherTitle}
+        lead={ground.weatherLead}
+        reports={weather ? [weather] : []}
+        copy={ground}
+        names={{ [data.nurseryId]: data.nurseryName }}
+      />
 
       <section className="mb-8 rounded-[2rem] bg-white p-4 ring-1 ring-sand sm:p-6">
         <h2 className="text-lg font-semibold text-forest">{ground.networkTitle}</h2>

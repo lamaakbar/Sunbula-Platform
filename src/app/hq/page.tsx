@@ -4,6 +4,8 @@ import { StatCard } from "@/components/ui/Feedback";
 import { NurseryCard } from "@/components/data/Cards";
 import { BotanicalMark } from "@/components/brand/BotanicalMark";
 import { NetworkMap } from "@/components/ground/NetworkMap";
+import { WeatherStrip } from "@/components/ground/WeatherStrip";
+import { getNetworkWeather } from "@/lib/weather/open-meteo";
 import { numberFmt } from "@/lib/format";
 import { groundCopy } from "@/lib/ground-copy";
 import { messages } from "@/lib/i18n";
@@ -14,6 +16,8 @@ export default async function HqHomePage() {
   const locale = await getLocale();
   const copy = messages(locale);
   const ground = groundCopy(locale);
+  const weather = await getNetworkWeather(cards.map((card) => card.nursery.id), locale);
+  const weatherNames = Object.fromEntries(cards.map((card) => [card.nursery.id, card.nursery.name]));
 
   return (
     <div>
@@ -42,6 +46,13 @@ export default async function HqHomePage() {
           <StatCard label={copy.hq.pending} value={totals.pending} tone={totals.pending ? "attention" : "default"} />
         </Link>
       </section>
+      <WeatherStrip
+        title={ground.weatherTitle}
+        lead={ground.weatherLead}
+        reports={weather}
+        copy={ground}
+        names={weatherNames}
+      />
       <section className="mt-8 rounded-[2rem] bg-white p-4 ring-1 ring-sand sm:p-6">
         <h2 className="text-lg font-semibold text-forest">{ground.networkTitle}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{ground.networkLead}</p>

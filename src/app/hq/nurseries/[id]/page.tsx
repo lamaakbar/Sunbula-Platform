@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { Breadcrumbs, PageHeader, StatCard } from "@/components/ui/Feedback";
 import { ZoneCard } from "@/components/data/Cards";
 import { CellGround } from "@/components/ground/CellGround";
+import { WeatherStrip } from "@/components/ground/WeatherStrip";
+import { getNurseryWeather } from "@/lib/weather/open-meteo";
 import { nurseryStatusFromScore } from "@/lib/domain/health";
 import { numberFmt } from "@/lib/format";
 import { groundCopy } from "@/lib/ground-copy";
@@ -19,6 +21,7 @@ export default async function HqNurseryPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const nursery = await prisma.nursery.findUnique({ where: { id } });
   if (!nursery) notFound();
+  const weather = await getNurseryWeather(nursery.id, locale);
   const zones = await getNurseryZoneCards(nursery.id);
   const operations = await prisma.dailyOperation.findMany({
     where: { nurseryId: nursery.id },
@@ -35,6 +38,13 @@ export default async function HqNurseryPage({ params }: { params: Promise<{ id: 
     <div>
       <Breadcrumbs items={[{ href: "/hq", label: copy.chrome.network }, { label: nursery.name }]} />
       <PageHeader title={nursery.name} description={`${nursery.region} · ${copy.hq.drill}`} />
+      <WeatherStrip
+        title={ground.weatherTitle}
+        lead={ground.weatherLead}
+        reports={weather ? [weather] : []}
+        copy={ground}
+        names={{ [nursery.id]: nursery.name }}
+      />
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label={copy.hq.readyStock} value={numberFmt(ready._sum.quantity ?? 0)} />
         <StatCard label={copy.hq.zones} value={zones.length} />

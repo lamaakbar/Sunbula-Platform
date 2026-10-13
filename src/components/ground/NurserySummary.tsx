@@ -11,6 +11,8 @@ import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { prisma } from "@/lib/prisma";
 import { HealthBadge } from "@/components/data/HealthBadge";
+import { WeatherStrip } from "@/components/ground/WeatherStrip";
+import { getNurseryWeather } from "@/lib/weather/open-meteo";
 
 export async function NurserySummary({ nurseryId }: { nurseryId: string }) {
   const user = await requireUser();
@@ -42,6 +44,7 @@ export async function NurserySummary({ nurseryId }: { nurseryId: string }) {
     weeklyInspections(nursery.id),
   ]);
   const home = user.role === "SUPERVISOR" ? "/supervisor" : "/employee";
+  const weather = await getNurseryWeather(nursery.id, locale);
 
   return (
     <div>
@@ -51,6 +54,13 @@ export async function NurserySummary({ nurseryId }: { nurseryId: string }) {
       <div className="mt-4">
         <HealthBadge status={nurseryStatusFromScore(summary.score)} />
       </div>
+      <WeatherStrip
+        title={ground.weatherTitle}
+        lead={ground.weatherLead}
+        reports={weather ? [weather] : []}
+        copy={ground}
+        names={{ [nursery.id]: nursery.name }}
+      />
       <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label={copy.hq.production} value={numberFmt(plants._sum.quantity ?? 0)} />
         <StatCard label={copy.supervisor.readyStock} value={numberFmt(ready._sum.quantity ?? 0)} />
