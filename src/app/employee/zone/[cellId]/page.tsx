@@ -8,7 +8,11 @@ import { Breadcrumbs, PageHeader } from "@/components/ui/Feedback";
 import { HealthBadge } from "@/components/data/HealthBadge";
 import { ReadingCard } from "@/components/data/OpsCards";
 import { SavedToast } from "@/components/feedback/SavedToast";
+import { GrowthTrack } from "@/components/ground/GrowthTrack";
+import { InspectionForm } from "@/components/ground/InspectionForm";
+import { PlantTag } from "@/components/ground/PlantTag";
 import { formatDate, plantAgeLabel } from "@/lib/format";
+import { groundCopy } from "@/lib/ground-copy";
 import { messages, relativeText } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { readingMeaning } from "@/services/data-quality";
@@ -24,6 +28,7 @@ export default async function CellDetailPage({
   const user = await requireRole("EMPLOYEE");
   const locale = await getLocale();
   const copy = messages(locale);
+  const ground = groundCopy(locale);
   const { cellId } = await params;
   const { saved } = await searchParams;
   await getAccessibleCell(user, cellId);
@@ -68,6 +73,23 @@ export default async function CellDetailPage({
         <Info label={copy.employee.lastOp} value={cell.operations[0] ? `${copy.operation[cell.operations[0].type]} · ${relativeText(locale, cell.operations[0].occurredAt)}` : copy.employee.noneYet} />
       </section>
 
+      {batch ? (
+        <section className="mt-6 grid gap-4 lg:grid-cols-[auto_1fr]">
+          <PlantTag code={batch.code} caption={ground.tagLead} />
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-forest">{ground.growthTitle}</h2>
+            <GrowthTrack stage={batch.growthStage} label={(stage) => copy.growth[stage]} />
+            <p className="mt-3 text-sm leading-6 text-muted">{ground.growthLead}</p>
+            <p className="mt-2 text-sm text-muted">
+              {ground.scientific}: {batch.species.scientificName}
+            </p>
+            <Link href={`/employee/plant/${batch.code}`} className="mt-3 inline-flex text-sm font-semibold text-forest">
+              {ground.file}
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       {moisture ? (
         <div className="mt-6 max-w-md">
           <ReadingCard
@@ -99,6 +121,20 @@ export default async function CellDetailPage({
           ))}
         </section>
       ) : null}
+
+      <div className="mt-8 max-w-xl">
+        <InspectionForm
+          cellId={cell.id}
+          returnTo={`/employee/zone/${cell.id}`}
+          copy={ground}
+          statusLabels={{
+            status: copy.forms.health,
+            healthy: copy.health.HEALTHY,
+            attention: copy.health.ATTENTION,
+            critical: copy.health.CRITICAL,
+          }}
+        />
+      </div>
 
       <section className="mt-8 grid gap-3 sm:grid-cols-2">
         <ActionLink href={`/employee/zone/${cell.id}/operate`} icon={Droplets} label={copy.employee.logOp} primary />

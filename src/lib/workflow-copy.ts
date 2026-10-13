@@ -89,6 +89,7 @@ const navAr: Record<string, string> = {
   "/employee": "الرئيسية",
   "/employee/zone": "منطقتي",
   "/employee/tasks": "المهام",
+  "/employee/inspect": "الفحص اليومي",
   "/employee/monitoring": "القراءات",
   "/employee/alerts": "التنبيهات",
   "/employee/updates": "تحديثات الدفعات",

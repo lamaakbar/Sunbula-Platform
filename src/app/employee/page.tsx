@@ -7,12 +7,18 @@ import { StatCard } from "@/components/ui/Feedback";
 import { PlantCellCard } from "@/components/data/Cards";
 import { BotanicalMark, SectionHeading } from "@/components/brand/BotanicalMark";
 import { Button } from "@/components/ui/Button";
+import { NetworkMap } from "@/components/ground/NetworkMap";
+import { getNetworkOverview } from "@/lib/data/hq";
+import { groundCopy } from "@/lib/ground-copy";
+import { numberFmt } from "@/lib/format";
 
 export default async function EmployeeHomePage() {
   const data = await getEmployeeHome();
   const locale = await getLocale();
   const copy = messages(locale);
+  const ground = groundCopy(locale);
   const firstName = data.user.fullName.split(" ")[0];
+  const network = await getNetworkOverview();
 
   return (
     <div>
@@ -35,9 +41,30 @@ export default async function EmployeeHomePage() {
           <Link href="/employee/tasks">
             <Button size="lg">{copy.employee.viewTasks}</Button>
           </Link>
-          <Link href="/employee/updates">
-            <Button size="lg" variant="secondary">{copy.employee.recordUpdate}</Button>
+          <Link href="/employee/inspect">
+            <Button size="lg" variant="secondary">{ground.inspectTitle}</Button>
           </Link>
+        </div>
+      </section>
+
+      <section className="mb-8 rounded-[2rem] bg-white p-4 ring-1 ring-sand sm:p-6">
+        <h2 className="text-lg font-semibold text-forest">{ground.networkTitle}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{ground.networkLead}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{ground.lockedLead}</p>
+        <div className="mt-4">
+          <NetworkMap
+            hqLabel={ground.hq}
+            enterLabel={ground.enter}
+            summaryLabel={ground.summaryOnly}
+            sites={network.cards.map((card) => ({
+              id: card.nursery.id,
+              name: card.nursery.name,
+              href: card.nursery.id === data.nurseryId ? "/employee/zone" : `/employee/network/${card.nursery.id}`,
+              health: card.health,
+              detail: `${numberFmt(card.totalPlants)} · ${card.alerts} ${copy.supervisor.openAlerts}`,
+              locked: card.nursery.id !== data.nurseryId,
+            }))}
+          />
         </div>
       </section>
 

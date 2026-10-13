@@ -10,6 +10,7 @@ import {
   BarChart3,
   Users,
   ClipboardList,
+  ScanLine,
   Bell,
   BookOpen,
   Network,
@@ -34,6 +35,7 @@ export function navigationFor(role: Role): { primary: NavItem[]; more: NavItem[]
         { href: "/employee/tasks", label: "Tasks", icon: ListChecks, mobile: true },
       ],
       more: [
+        { href: "/employee/inspect", label: "Daily check", icon: ScanLine },
         { href: "/employee/updates", label: "Batch updates", icon: ClipboardList },
         { href: "/employee/monitoring", label: "Readings", icon: BarChart3 },
         { href: "/employee/alerts", label: "Alerts", icon: Bell },

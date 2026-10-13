@@ -4,7 +4,8 @@ import { getAccessibleZone } from "@/lib/auth/rbac";
 import { getZoneCells, zoneHealthSummary } from "@/lib/data/cells";
 import { prisma } from "@/lib/prisma";
 import { Breadcrumbs, PageHeader, StatCard } from "@/components/ui/Feedback";
-import { PlantCellCard } from "@/components/data/Cards";
+import { CellGround } from "@/components/ground/CellGround";
+import { groundCopy } from "@/lib/ground-copy";
 import { messages, relativeText } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 
@@ -16,6 +17,7 @@ export default async function SupervisorZoneDetailPage({
   const user = await requireRole("SUPERVISOR");
   const locale = await getLocale();
   const copy = messages(locale);
+  const ground = groundCopy(locale);
   const { zoneId } = await params;
   const zone = await getAccessibleZone(user, zoneId);
   const cells = await getZoneCells(zone.id);
@@ -39,16 +41,14 @@ export default async function SupervisorZoneDetailPage({
         <StatCard label={copy.supervisor.critical} value={summary.critical} tone="critical" />
         <StatCard label={copy.supervisor.score} value={`${summary.score}%`} />
       </section>
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-        {cells.map((cell) => (
-          <PlantCellCard
-            key={cell.id}
-            href={`/supervisor/zones/${zone.id}?cell=${cell.id}`}
-            code={cell.code}
-            health={cell.health}
-            speciesName={cell.speciesName}
-          />
-        ))}
+      <p className="mt-6 text-sm leading-6 text-muted">{ground.groundLead}</p>
+      <div className="mt-4">
+        <CellGround
+          cells={cells}
+          hrefFor={(cell) => (cell.batchCode ? `/supervisor/plant/${cell.batchCode}` : null)}
+          emptyLabel={ground.emptyCell}
+          stageLabel={(stage) => copy.growth[stage]}
+        />
       </div>
       <section className="mt-10">
         <h2 className="text-xl font-semibold text-forest">{copy.hq.recentOps}</h2>

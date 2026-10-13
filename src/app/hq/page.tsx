@@ -3,13 +3,17 @@ import { getNetworkOverview } from "@/lib/data/hq";
 import { StatCard } from "@/components/ui/Feedback";
 import { NurseryCard } from "@/components/data/Cards";
 import { BotanicalMark } from "@/components/brand/BotanicalMark";
+import { NetworkMap } from "@/components/ground/NetworkMap";
 import { numberFmt } from "@/lib/format";
+import { groundCopy } from "@/lib/ground-copy";
 import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 
 export default async function HqHomePage() {
   const { cards, totals } = await getNetworkOverview();
-  const copy = messages(await getLocale());
+  const locale = await getLocale();
+  const copy = messages(locale);
+  const ground = groundCopy(locale);
 
   return (
     <div>
@@ -37,6 +41,26 @@ export default async function HqHomePage() {
         <Link href="/hq/requests?tab=PENDING" className="block">
           <StatCard label={copy.hq.pending} value={totals.pending} tone={totals.pending ? "attention" : "default"} />
         </Link>
+      </section>
+      <section className="mt-8 rounded-[2rem] bg-white p-4 ring-1 ring-sand sm:p-6">
+        <h2 className="text-lg font-semibold text-forest">{ground.networkTitle}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{ground.networkLead}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{ground.future}</p>
+        <div className="mt-4">
+          <NetworkMap
+            hqLabel={ground.hq}
+            enterLabel={ground.enter}
+            summaryLabel={ground.summaryOnly}
+            sites={cards.map((card) => ({
+              id: card.nursery.id,
+              name: card.nursery.name,
+              href: `/hq/nurseries/${card.nursery.id}`,
+              health: card.health,
+              detail: `${numberFmt(card.totalPlants)} · ${card.alerts} ${copy.supervisor.openAlerts}`,
+              locked: false,
+            }))}
+          />
+        </div>
       </section>
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-forest">{copy.hq.intervene}</h2>

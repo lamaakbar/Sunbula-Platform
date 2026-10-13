@@ -1,21 +1,24 @@
 import Link from "next/link";
 import { getEmployeeHome } from "@/lib/data/employee";
 import { PageHeader, StatCard } from "@/components/ui/Feedback";
-import { PlantCellCard } from "@/components/data/Cards";
+import { CellGround } from "@/components/ground/CellGround";
 import { Button } from "@/components/ui/Button";
+import { groundCopy } from "@/lib/ground-copy";
 import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 
 export default async function MyZonePage() {
   const data = await getEmployeeHome();
-  const copy = messages(await getLocale());
+  const locale = await getLocale();
+  const copy = messages(locale);
+  const ground = groundCopy(locale);
 
   return (
     <div>
       <PageHeader
         eyebrow={data.nurseryName}
         title={data.zoneLabel}
-        description={copy.employee.zoneLead}
+        description={`${copy.employee.zoneLead} ${ground.groundLead}`}
         actions={
           <Link href="/employee/add">
             <Button>{copy.employee.addTitle}</Button>
@@ -40,15 +43,17 @@ export default async function MyZonePage() {
         <StatCard label={copy.employee.openAlerts} value={data.alerts} tone={data.alerts ? "attention" : "default"} />
       </section>
 
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-        {data.cells.map((cell) => (
-          <PlantCellCard
-            key={cell.id}
-            href={`/employee/zone/${cell.id}`}
-            code={cell.code}
-            health={cell.health}
-            speciesName={cell.speciesName}
-          />
+      <div className="mt-8 space-y-8">
+        {data.zones.map((zone) => (
+          <section key={zone.id}>
+            {data.zones.length > 1 ? <h2 className="mb-3 text-lg font-semibold text-forest">{zone.name}</h2> : null}
+            <CellGround
+              cells={data.cells.filter((cell) => cell.zoneId === zone.id)}
+              hrefFor={(cell) => `/employee/zone/${cell.id}`}
+              emptyLabel={ground.emptyCell}
+              stageLabel={(stage) => copy.growth[stage]}
+            />
+          </section>
         ))}
       </div>
     </div>

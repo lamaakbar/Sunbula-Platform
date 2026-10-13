@@ -7,13 +7,20 @@ import { StatCard } from "@/components/ui/Feedback";
 import { ZoneCard } from "@/components/data/Cards";
 import { AlertCard } from "@/components/data/OpsCards";
 import { BotanicalMark, SectionHeading } from "@/components/brand/BotanicalMark";
+import { NetworkMap } from "@/components/ground/NetworkMap";
+import { getNetworkOverview } from "@/lib/data/hq";
+import { weeklyInspections } from "@/lib/data/inspections";
+import { groundCopy } from "@/lib/ground-copy";
 import { nurseryStatusFromScore } from "@/lib/domain/health";
 
 export default async function SupervisorHomePage() {
   const data = await getSupervisorOverview();
   const locale = await getLocale();
   const copy = messages(locale);
+  const ground = groundCopy(locale);
   const firstName = data.user.fullName.split(" ")[0];
+  const network = await getNetworkOverview();
+  const week = await weeklyInspections(data.nurseryId);
 
   return (
     <div>
@@ -24,6 +31,30 @@ export default async function SupervisorHomePage() {
           {greetingText(locale)}, {firstName}.
         </h1>
         <p className="mt-2 max-w-xl text-muted">{copy.supervisor.lead}</p>
+      </section>
+
+      <section className="mb-8 rounded-[2rem] bg-white p-4 ring-1 ring-sand sm:p-6">
+        <h2 className="text-lg font-semibold text-forest">{ground.networkTitle}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{ground.networkLead}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{ground.lockedLead}</p>
+        <div className="mt-4">
+          <NetworkMap
+            hqLabel={ground.hq}
+            enterLabel={ground.enter}
+            summaryLabel={ground.summaryOnly}
+            sites={network.cards.map((card) => ({
+              id: card.nursery.id,
+              name: card.nursery.name,
+              href:
+                card.nursery.id === data.nurseryId
+                  ? "/supervisor/zones"
+                  : `/supervisor/network/${card.nursery.id}`,
+              health: card.health,
+              detail: `${numberFmt(card.totalPlants)} · ${card.alerts} ${copy.supervisor.openAlerts}`,
+              locked: card.nursery.id !== data.nurseryId,
+            }))}
+          />
+        </div>
       </section>
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -37,6 +68,7 @@ export default async function SupervisorHomePage() {
         <Link href="/supervisor/employees" className="block">
           <StatCard label={copy.supervisor.tasks} value={data.tasksToday.length} />
         </Link>
+        <StatCard label={ground.week} value={week.checked} hint={`${ground.weekFollow} ${week.followUp}`} />
         <Link href="/supervisor/updates?tab=PENDING" className="block">
           <StatCard
             label={copy.supervisor.pending}

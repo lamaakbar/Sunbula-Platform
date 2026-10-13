@@ -4,8 +4,10 @@ import { getNurseryZoneCards } from "@/lib/data/cells";
 import { prisma } from "@/lib/prisma";
 import { Breadcrumbs, PageHeader, StatCard } from "@/components/ui/Feedback";
 import { ZoneCard } from "@/components/data/Cards";
+import { CellGround } from "@/components/ground/CellGround";
 import { nurseryStatusFromScore } from "@/lib/domain/health";
 import { numberFmt } from "@/lib/format";
+import { groundCopy } from "@/lib/ground-copy";
 import { messages, relativeText } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 
@@ -13,6 +15,7 @@ export default async function HqNurseryPage({ params }: { params: Promise<{ id: 
   await requireRole("HQ");
   const locale = await getLocale();
   const copy = messages(locale);
+  const ground = groundCopy(locale);
   const { id } = await params;
   const nursery = await prisma.nursery.findUnique({ where: { id } });
   if (!nursery) notFound();
@@ -46,12 +49,26 @@ export default async function HqNurseryPage({ params }: { params: Promise<{ id: 
             name={item.zone.name}
             score={item.summary.score}
             health={nurseryStatusFromScore(item.summary.score)}
-            hint={`${item.summary.attention} cells need attention`}
+            hint={`${item.summary.attention} ${copy.supervisor.attention}`}
           />
         ))}
       </div>
+      <section className="mt-8 space-y-8">
+        <p className="text-sm leading-6 text-muted">{ground.groundLead}</p>
+        {zones.map((item) => (
+          <div key={item.zone.id}>
+            <h2 className="mb-3 text-lg font-semibold text-forest">{item.zone.name}</h2>
+            <CellGround
+              cells={item.cells}
+              hrefFor={(cell) => (cell.batchCode ? `/hq/plant/${cell.batchCode}` : null)}
+              emptyLabel={ground.emptyCell}
+              stageLabel={(stage) => copy.growth[stage]}
+            />
+          </div>
+        ))}
+      </section>
       <section className="mt-10">
-        <h2 className="text-xl font-semibold text-forest">Latest field operations</h2>
+        <h2 className="text-xl font-semibold text-forest">{copy.hq.recentOps}</h2>
         <ul className="mt-4 space-y-3">
           {operations.map((op) => (
             <li key={op.id} className="rounded-3xl border border-sand bg-white px-5 py-4">

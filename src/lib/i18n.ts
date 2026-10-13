@@ -280,6 +280,7 @@ const en = {
     "batch-submitted": "Batch update submitted for review.",
     "batch-resubmitted": "Revision sent back for review.",
     "batch-reviewed": "Decision saved. The batch changed only if you approved it.",
+    inspection: "Plant check saved. A specialist still decides the next step.",
   },
   common: {
     review: "Review",
@@ -570,6 +571,7 @@ const ar: typeof en = {
     "batch-submitted": "أُرسل تحديث الدفعة للمراجعة.",
     "batch-resubmitted": "أُعيدت المراجعة من جديد.",
     "batch-reviewed": "حُفظ القرار. تتغير الدفعة فقط عند الموافقة.",
+    inspection: "حُفظ فحص النبتة. الخطوة التالية يقررها المختص.",
   },
   common: {
     review: "مراجعة",

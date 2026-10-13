@@ -53,7 +53,11 @@ export async function getZoneCells(zoneId: string) {
       return {
         id: cell.id,
         code: cell.code,
+        zoneId: cell.zoneId,
+        row: cell.rowIndex,
+        col: cell.colIndex,
         health,
+        stage: batch?.growthStage ?? null,
         speciesName: batch?.species.commonName ?? "Empty cell",
         batchCode: batch?.code ?? null,
         quantity: batch?.quantity ?? 0,
