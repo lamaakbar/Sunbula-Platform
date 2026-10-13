@@ -8,6 +8,7 @@ import { HealthBadge } from "@/components/data/HealthBadge";
 import { PageHeader } from "@/components/ui/Feedback";
 import { formatDate, plantAgeLabel } from "@/lib/format";
 import { groundCopy } from "@/lib/ground-copy";
+import { isPlantCode } from "@/lib/inspection";
 import { messages, relativeText } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +25,7 @@ export async function PlantFile({
 }) {
   const copy = messages(locale);
   const ground = groundCopy(locale);
+  if (!isPlantCode(code)) notFound();
   const batch = await prisma.seedlingBatch.findUnique({
     where: { code },
     include: {
@@ -116,6 +118,7 @@ export async function PlantFile({
           <p className="mt-2 text-sm leading-6 text-muted">{knowledge.careGuidelines}</p>
           <p className="mt-2 text-sm leading-6 text-muted">{knowledge.irrigationGuidance}</p>
           <p className="mt-2 text-sm leading-6 text-muted">{knowledge.fertilizationGuidance}</p>
+          <p className="mt-3 text-xs leading-5 text-muted">{copy.supervisor.knowledgeLead}</p>
         </section>
       ) : null}
 

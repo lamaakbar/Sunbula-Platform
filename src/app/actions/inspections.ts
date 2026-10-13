@@ -6,35 +6,27 @@ import type { HealthStatus } from "@prisma/client";
 import { requireRole, requireUser } from "@/lib/auth/current-user";
 import { getAccessibleCell } from "@/lib/auth/rbac";
 import { alertOpenKey } from "@/lib/integrity-keys";
+import { groundCopy } from "@/lib/ground-copy";
+import { inspectionReturnTo, isPlantCode, raisedHealth } from "@/lib/inspection";
+import { getLocale } from "@/lib/locale";
 import { prisma } from "@/lib/prisma";
 import { recordEvent } from "@/services/events";
 
 const statuses = ["HEALTHY", "ATTENTION", "CRITICAL"] as const;
-const symptoms = ["WILT", "SPOTS", "COLOR", "PEST", "OTHER"] as const;
 const extents = ["CELL", "NEARBY", "ZONE"] as const;
-
-const symptomText: Record<(typeof symptoms)[number], string> = {
-  WILT: "Wilting",
-  SPOTS: "Spots",
-  COLOR: "Unusual color",
-  PEST: "Insects or pests",
-  OTHER: "Something else",
-};
 
 export async function recordInspectionAction(formData: FormData) {
   const user = await requireRole("EMPLOYEE");
+  const text = groundCopy(await getLocale());
   const cellId = String(formData.get("cellId") ?? "");
   const status = String(formData.get("status") ?? "");
   const symptom = String(formData.get("symptom") ?? "");
   const extent = String(formData.get("extent") ?? "CELL");
   const notes = String(formData.get("notes") ?? "").trim().slice(0, 500);
-  const returnTo = safeReturn(String(formData.get("returnTo") ?? ""));
+  const returnTo = inspectionReturnTo(String(formData.get("returnTo") ?? ""));
 
-  if (!statuses.includes(status as (typeof statuses)[number])) {
-    redirect(`${returnTo}?saved=inspection`);
-  }
-  if (!extents.includes(extent as (typeof extents)[number])) {
-    redirect(`${returnTo}?saved=inspection`);
+  if (!statuses.includes(status as (typeof statuses)[number]) || !extents.includes(extent as (typeof extents)[number])) {
+    redirect(returnTo);
   }
 
   const cell = await getAccessibleCell(user, cellId);
@@ -43,17 +35,13 @@ export async function recordInspectionAction(formData: FormData) {
     orderBy: { createdAt: "desc" },
   });
   const health = status as HealthStatus;
-  const symptomLabel = symptoms.includes(symptom as (typeof symptoms)[number])
-    ? symptomText[symptom as (typeof symptoms)[number]]
-    : "";
+  const symptomLabel = symptomLabelFor(symptom, text);
   const raised = health !== "HEALTHY" && (extent === "NEARBY" || extent === "ZONE");
   const message = [
     symptomLabel,
-    extent === "CELL" ? "Seen in this cell." : extent === "NEARBY" ? "Nearby cells look similar." : "A wider part of the zone looks similar.",
+    extent === "NEARBY" ? text.nearby : extent === "ZONE" ? text.wider : text.thisCell,
     notes,
-    raised
-      ? "Similar signs nearby raise suspicion and call for another look. They do not confirm spread or a disease."
-      : "This record is a field check, not a diagnosis. A specialist decides the next step.",
+    raised ? text.suspicion : text.fieldCheck,
   ]
     .filter(Boolean)
     .join(" ");
@@ -95,7 +83,7 @@ export async function recordInspectionAction(formData: FormData) {
     if (batch && health !== "HEALTHY") {
       await tx.seedlingBatch.update({
         where: { id: batch.id },
-        data: { healthStatus: health },
+        data: { healthStatus: raisedHealth(batch.healthStatus, health) as HealthStatus },
       });
     }
 
@@ -120,7 +108,7 @@ export async function recordInspectionAction(formData: FormData) {
       data: {
         type: "HEALTH_RISK",
         severity: health === "CRITICAL" || raised ? "HIGH" : "MEDIUM",
-        title: "Plant check needs review",
+        title: text.alertTitle,
         message,
         nurseryId: cell.nurseryId,
         zoneId: cell.zoneId,
@@ -143,9 +131,8 @@ export async function recordInspectionAction(formData: FormData) {
     const recommendation = await tx.recommendation.create({
       data: {
         alertId: alert.id,
-        title: "Review this plant check",
-        message:
-          "Inspect this cell. If nearby cells were noted, look at them too. Similar signs do not confirm that a problem has spread.",
+        title: text.reviewTitle,
+        message: text.reviewBody,
         nurseryId: cell.nurseryId,
         zoneId: cell.zoneId,
         plantCellId: cell.id,
@@ -178,12 +165,18 @@ export async function recordInspectionAction(formData: FormData) {
 export async function openPlantCodeAction(formData: FormData) {
   const user = await requireUser();
   const code = String(formData.get("code") ?? "").trim();
+  const home = user.role === "HQ" ? "/hq" : user.role === "SUPERVISOR" ? "/supervisor" : "/employee/inspect";
+  if (!isPlantCode(code)) redirect(home);
   const base =
     user.role === "HQ" ? "/hq/plant" : user.role === "SUPERVISOR" ? "/supervisor/plant" : "/employee/plant";
   redirect(`${base}/${encodeURIComponent(code)}`);
 }
 
-function safeReturn(value: string) {
-  if (value.startsWith("/employee/zone/") || value === "/employee/inspect") return value;
-  return "/employee/inspect";
+function symptomLabelFor(symptom: string, text: ReturnType<typeof groundCopy>) {
+  if (symptom === "WILT") return text.wilt;
+  if (symptom === "SPOTS") return text.spots;
+  if (symptom === "COLOR") return text.color;
+  if (symptom === "PEST") return text.pest;
+  if (symptom === "OTHER") return text.other;
+  return "";
 }

@@ -1,3 +1,26 @@
+const healthRank = {
+  HEALTHY: 0,
+  NO_RECENT_DATA: 1,
+  ATTENTION: 2,
+  CRITICAL: 3,
+} as const;
+
+export function raisedHealth(current: string, next: string) {
+  const currentRank = healthRank[current as keyof typeof healthRank] ?? 0;
+  const nextRank = healthRank[next as keyof typeof healthRank] ?? 0;
+  return nextRank >= currentRank ? next : current;
+}
+
+export function inspectionReturnTo(value: string) {
+  if (value === "/employee/inspect") return value;
+  if (/^\/employee\/zone\/[A-Za-z0-9-]+$/.test(value)) return value;
+  return "/employee/inspect";
+}
+
+export function isPlantCode(value: string) {
+  return /^[A-Za-z0-9-]{1,80}$/.test(value);
+}
+
 export function inspectionSampleSize(cellCount: number) {
   if (cellCount <= 0) return 0;
   return Math.min(12, Math.max(4, Math.ceil(cellCount * 0.2)), cellCount);

@@ -5,5 +5,5 @@ import { getLocale } from "@/lib/locale";
 export default async function HqPlantPage({ params }: { params: Promise<{ code: string }> }) {
   const user = await requireRole("HQ");
   const { code } = await params;
-  return <PlantFile code={decodeURIComponent(code)} user={user} locale={await getLocale()} />;
+  return <PlantFile code={code} user={user} locale={await getLocale()} />;
 }
